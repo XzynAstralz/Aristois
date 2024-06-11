@@ -25,9 +25,6 @@ local Table = {
     ChatStrings1 = {
         ["HYPE73WZNQRT5"] = "Aristois",
     },
-    ChatStrings2 = {
-        ["Aristois"] = "HYPE73WZNQRT5",
-    },
     checkedPlayers = {},
     Box = function()
         local boxHandleAdornment = Instance.new("BoxHandleAdornment")
@@ -40,6 +37,14 @@ local Table = {
         return boxHandleAdornment
     end
 }
+tempF = function()
+    local tempT = {}
+    for i, x in pairs(Table.ChatStrings1) do
+        tempT[x] = i
+    end
+	return tempT
+end
+Table.ChatStrings2 = tempF()
 
 local RunLoops = {RenderStepTable = {}, StepTable = {}, HeartTable = {}}
 local Window = GuiLibrary:CreateWindow({
