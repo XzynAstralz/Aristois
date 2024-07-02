@@ -9,7 +9,7 @@ Original by Sirius
 Arrays  | Designing + Programming + New Features
 
 ]]
---if shared.Executed then
+if shared.Executed then
 	local Release = "Release 1B"
 	local NotificationDuration = 6.5
 	local RayfieldFolder = "Rayfield"
@@ -3692,6 +3692,6 @@ Arrays  | Designing + Programming + New Features
 		end
 	end
 
-	task.delay(7.5, RayfieldLibrary.LoadConfiguration, RayfieldLibrary)
+	task.delay(5.5, RayfieldLibrary.LoadConfiguration, RayfieldLibrary)
 	return RayfieldLibrary
---end
+end
