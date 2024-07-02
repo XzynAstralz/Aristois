@@ -2304,6 +2304,70 @@ runcode(function()
     })
 end)
 
+
+runcode(function()
+    local Section = Utility:CreateSection("AutoHeal", false)
+    local HealTeam = {Enabled = false}
+    local oldAnimationTypes = {}
+    local oldSoundList = {}
+    
+    local AutoHeal = Utility:CreateToggle({
+        Name = "AutoHeal",
+        CurrentValue = false,
+        Flag = "AutoHeal",
+        SectionParent = Section,
+        Callback = function(callback)
+            if callback then
+                RunLoops:BindToHeartbeat("Autoheal", function()
+                    task.wait(0.2)
+                    if getItem("guitar") then
+                        if HealTeam.Enabled then
+                            for _, player in ipairs(Players:GetPlayers()) do
+                                local distance = (player.Character.HumanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).magnitude
+                                if player.Team == lplr.Team and distance < 20 and player.Character.Humanoid.Health < player.Character.Humanoid.MaxHealth then
+                                    bedwars.PlayGuitar:FireServer({
+                                        ["healTarget"] = player
+                                    })
+                                    bedwars.StopPlayingGuitar:FireServer()
+                                end
+                            end
+                        end
+                        if lplr.Character.Humanoid.Health < lplr.Character.Humanoid.MaxHealth then
+                            bedwars.PlayGuitar:FireServer({
+                                ["healTarget"] = lplr
+                            })
+                            bedwars.StopPlayingGuitar:FireServer()
+                        end
+                    end
+                end)
+            else
+                RunLoops:UnbindFromHeartbeat("Autoheal")
+                for key, value in pairs(bedwars.AnimationType) do
+                    local lowerKey = key:lower()
+                    if lowerKey:find("guitar") then
+                        bedwars.AnimationType[key] = oldAnimationTypes[key]
+                    end
+                end
+                for key, value in pairs(bedwars.SoundList) do
+                    local lowerKey = key:lower()
+                    if lowerKey:find("guitar") then
+                        bedwars.SoundList[key] = oldSoundList[key]
+                    end
+                end
+            end
+        end
+    })
+    local HealTeamToggle = Utility:CreateToggle({
+        Name = "HealTeam",
+        CurrentValue = false,
+        Flag = "HealTeam",
+        SectionParent = Section,
+        Callback = function(val)
+            HealTeam.Enabled = val
+        end
+    })
+end)
+
 local whitelist = {connection = nil, players = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Whitelist/main/list.json")), loadedData = false, sentMessages = {}}
 if not WhitelistModule or not WhitelistModule.checkstate and whitelist then return true end
 
