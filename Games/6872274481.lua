@@ -2313,9 +2313,7 @@ end)
 runcode(function()
     local Section = Utility:CreateSection("AutoHeal", false)
     local HealTeam = {Enabled = false}
-    local oldAnimationTypes = {}
-    local oldSoundList = {}
-    
+
     local AutoHeal = Utility:CreateToggle({
         Name = "AutoHeal",
         CurrentValue = false,
