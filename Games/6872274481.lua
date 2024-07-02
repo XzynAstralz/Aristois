@@ -13,7 +13,8 @@ local getcustomasset = getsynasset or getcustomasset
 local HttpService = game:GetService("HttpService")
 local VirtualUserService = game:GetService("VirtualUser")
 getgenv().SecureMode = true
-local GuiLibrary = shared.GuiLibrary
+local GuiLibrary = loadstring(readfile("Aristois/GuiLibrary.lua"))()
+
 local PlayerUtility = loadstring(readfile("Aristois/Librarys/Utility.lua"))()
 local WhitelistModule = loadstring(readfile("Aristois/Librarys/Whitelist.lua"))()
 local weaponMeta = HttpService:JSONDecode(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/test/main/sword.json"))
@@ -119,7 +120,10 @@ local function runcode(func) func() end
 local bedwars = {
     PickupRemote = ReplicatedStorage:WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("PickupItemDrop"),
     SwordHit = ReplicatedStorage:WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("SwordHit"),
-    ConsumeItem = game:GetService("ReplicatedStorage").rbxts_include.node_modules["@rbxts"].net.out._NetManaged.ConsumeItem
+    ConsumeItem = game:GetService("ReplicatedStorage").rbxts_include.node_modules["@rbxts"].net.out._NetManaged.ConsumeItem,
+    HandDrill = game:GetService("ReplicatedStorage"):WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("MultiBreakToolStopSpinningFromClient"),
+    PlayGuitar = game:GetService("ReplicatedStorage"):WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("PlayGuitar"),
+    StopPlayingGuitar = game:GetService("ReplicatedStorage"):WaitForChild("rbxts_include"):WaitForChild("node_modules"):WaitForChild("@rbxts"):WaitForChild("net"):WaitForChild("out"):WaitForChild("_NetManaged"):WaitForChild("StopPlayingGuitar"),
 }
 
 local networkownerswitch = tick()
@@ -197,7 +201,7 @@ local function switchItem(tool, lol)
 end
 
 local function SpeedMultiplier(flight)
-    local baseMultiplier = 0.95
+    local baseMultiplier = 0.985
     local multiplier = baseMultiplier
     if lplr.Character:GetAttribute("StatusEffect_speed") then
         multiplier = multiplier + 0.6
@@ -215,10 +219,10 @@ runcode(function()
     local FacePlayerEnabled = {Enabled = false}
     local BoxesEnabled = {Enabled = false}
     local AttackAnimEnabled = {Enabled = false}
-    local swing = {Enabled = false}
-    local VMAnim = false
+    local Swing = {Enabled = false}
+    local VMAnimActive = false
     local lastEndAnim = tick()
-    local Anims = {
+    local Animations = {
         Normal = {
             {CFrame = CFrame.new(-0.17, 0.14, -0.12) * CFrame.Angles(math.rad(-53), math.rad(50), math.rad(-64)), Time = 0.1}, 
             {CFrame = CFrame.new(-0.55, -0.59, -0.1) * CFrame.Angles(math.rad(-161), math.rad(54), math.rad(-6)), Time = 0.08},
@@ -233,7 +237,7 @@ runcode(function()
             {CFrame = CFrame.new(0.69, -0.7, 0.6) * CFrame.Angles(math.rad(295), math.rad(55), math.rad(290)), Time = 0.15},
             {CFrame = CFrame.new(0.69, -0.71, 0.6) * CFrame.Angles(math.rad(200), math.rad(60), math.rad(1)), Time = 0.15}
         },
-        good = {
+        Good = {
             {CFrame = CFrame.new(0.80, -0.1, 0.6) * CFrame.Angles(math.rad(295), math.rad(55), math.rad(290)), Time = 0.15},
             {CFrame = CFrame.new(0.80, -0.71, 0.6) * CFrame.Angles(math.rad(360), math.rad(32), math.rad(1)), Time = 0.15},
         },
@@ -244,20 +248,20 @@ runcode(function()
             {CFrame = CFrame.new(-0.56, -0.81, 0.23) * CFrame.Angles(math.rad(-167), math.rad(49), math.rad(-1)), Time = 0.11}
         }
     }
-    local Endanim = {
+    local EndAnimation = {
         {CFrame = CFrame.new(0, 0, 0) * CFrame.Angles(math.rad(0), math.rad(0), math.rad(0)), Time = 0.35}
     }
 
     local boxHandleAdornment = Table.createBoxAdornment()
-    local function updateBoxAdornment(nearest)
-        if BoxesEnabled.Enabled and nearest and nearest.Character and nearest.Character:FindFirstChild("HumanoidRootPart") then
-            if boxHandleAdornment.Parent ~= nearest.Character then
-                boxHandleAdornment.Adornee = nearest.Character.HumanoidRootPart
+    local function updateBoxAdornment(root)
+        if BoxesEnabled.Enabled then
+            if boxHandleAdornment.Parent ~= root then
+                boxHandleAdornment.Adornee = root
                 if boxHandleAdornment.Adornee then
                     local cf = boxHandleAdornment.Adornee.CFrame
                     local x, y, z = cf:ToEulerAnglesXYZ()
                     boxHandleAdornment.CFrame = CFrame.new() * CFrame.Angles(-x, -y, -z)
-                    boxHandleAdornment.Parent = nearest.Character
+                    boxHandleAdornment.Parent = root
                 end
             end
         else
@@ -289,83 +293,60 @@ runcode(function()
         Callback = function(callback)
             if callback then
                 RunLoops:BindToHeartbeat("Killaura", function()
+                    if not PlayerUtility.IsAlive(lplr) then return end
                     nearest = PlayerUtility.getNearestEntity(Distance["Value"], false, true)
-                    local sword = getSword()
-                    if nearest then
-                    if nearest.Character and not nearest.Character:FindFirstChild("ForceField") and nearest.Character:FindFirstChild("HumanoidRootPart") then
-                            local distanceToNearest = (nearest.Character.HumanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).magnitude
-                            switchItem(sword.Name, true)
-                            if sword and nearest then
-                                local selfPos = lplr.Character.HumanoidRootPart.Position + ((distanceToNearest > 14.3) and (CFrame.lookAt(lplr.Character.HumanoidRootPart.Position, nearest.Character.HumanoidRootPart.Position).LookVector * 4) or Vector3.new(0, 0, 0))
-                                bedwars.SwordHit:FireServer({
-                                    weapon = sword,
-                                    entityInstance = nearest.Character,
-                                    validate = {
-                                        raycast = {},
-                                        targetPosition = {value = nearest.Character.HumanoidRootPart.Position},
-                                        selfPosition = {value = selfPos},
-                                    },
-                                    chargedAttack = {chargeRatio = 0}
-                                })
-                            end
-                            if FacePlayerEnabled.Enabled then
-                                lplr.Character:SetPrimaryPartCFrame(CFrame.new(lplr.Character.HumanoidRootPart.Position, Vector3.new(nearest.Character.HumanoidRootPart.Position.X, lplr.Character.HumanoidRootPart.Position.Y, nearest.Character.HumanoidRootPart.Position.Z)))
-                            end
-                            if swing.Enabled then
-                                playanimation("rbxassetid://4947108314")
-                            end
-                            if AttackAnimEnabled.Enabled and distanceToNearest < 18 then
-                                if not VMAnim then
-                                    VMAnim = true
-                                    local sequence = {}
-                                    for i, v in pairs(Anims.Astral) do
-                                        table.insert(sequence, {CFrame = origC0 * v.CFrame, Time = v.Time}) 
-                                    end
-                                    local totalTime = 0
-                                    for i, v in ipairs(sequence) do
-                                        totalTime = totalTime + v.Time
-                                    end
-                                    local startTime = tick()
-                                    local connection
-                                    for i, v in ipairs(sequence) do
-                                        local remainingTime = totalTime - (tick() - startTime)
-                                        local adjustedTime = v.Time
-                                        local tweenInfo = TweenInfo.new(adjustedTime)
-                                        local tween = TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, tweenInfo, {C0 = v.CFrame})
-                                        tween:Play()
-                                        local elapsedTime = 0
-
-                                        local function update(deltaTime)
-                                            elapsedTime = elapsedTime + deltaTime
-                                            if elapsedTime >= adjustedTime then
-                                                tween:Cancel()
-                                            end
-                                        end
-                                        connection = RunService.RenderStepped:Connect(function(deltaTime)
-                                            update(deltaTime)
-                                            if elapsedTime >= adjustedTime then
-                                                connection:Disconnect()
-                                            end
-                                        end)
-                                        repeat RunService.RenderStepped:Wait() until elapsedTime >= adjustedTime
-                                    end
-                                    VMAnim = false
-                                    for i, v in ipairs(Endanim) do
-                                        TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(v.Time), {C0 = origC0 * v.CFrame}):Play()
-                                    end
-                                end
-                            end
-                            lastEndAnim = tick()
-                            updateBoxAdornment(nearest)
-                        else
-                            if AttackAnimEnabled.Enabled and tick() - lastEndAnim > 0.2 then
-                                for i, v in ipairs(Endanim) do
-                                    TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(v.Time), {C0 = origC0 * v.CFrame}):Play()
-                                end
-                                lastEndAnim = tick()
-                            end
-                            updateBoxAdornment(nil)
+                    if not nearest or ((nearest:FindFirstChild("Humanoid") and nearest:FindFirstChild("Humanoid").Health) or nearest:GetAttribute("Health") or 1) <= 0 then
+                        nearest = nil
+                        if BoxesEnabled.Enabled then
+                            boxHandleAdornment.Adornee = nil
+                            boxHandleAdornment.Parent = nil
                         end
+                        return 
+                    end                    
+                    local sword = getSword()
+                    local root = nearest:FindFirstChild("HumanoidRootPart") or nearest.PrimaryPart
+                    if root then
+                        local distanceToNearest = (root.Position - lplr.Character.HumanoidRootPart.Position).magnitude
+                        switchItem(sword.Name, true)
+                        if sword then
+                            local selfPos = lplr.Character.HumanoidRootPart.Position + ((distanceToNearest > 14.3) and (CFrame.lookAt(lplr.Character.HumanoidRootPart.Position, root.Position).LookVector * 4) or Vector3.new(0, 0, 0))
+                            bedwars.SwordHit:FireServer({
+                                weapon = sword,
+                                entityInstance = nearest,
+                                validate = {
+                                    raycast = {},
+                                    targetPosition = {value = root.Position},
+                                    selfPosition = {value = selfPos},
+                                },
+                                chargedAttack = {chargeRatio = 0}
+                            })
+                        end
+                        if FacePlayerEnabled.Enabled then
+                            lplr.Character:SetPrimaryPartCFrame(CFrame.new(lplr.Character.HumanoidRootPart.Position, Vector3.new(root.Position.X, lplr.Character.HumanoidRootPart.Position.Y, root.Position.Z)))
+                        end
+                        if Swing.Enabled then
+                            playanimation("rbxassetid://4947108314")
+                        end
+                        updateBoxAdornment(root)
+                        if AttackAnimEnabled.Enabled and distanceToNearest < 18 and not VMAnimActive then
+                            VMAnimActive = true
+                            for _, anim in ipairs(Animations.Astral) do
+                                TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(anim.Time), {C0 = origC0 * anim.CFrame}):Play()
+                                task.wait(anim.Time)
+                            end
+                            for _, endAnim in ipairs(EndAnimation) do
+                                TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(endAnim.Time), {C0 = origC0 * endAnim.CFrame}):Play()
+                            end
+                            VMAnimActive = false
+                        elseif AttackAnimEnabled.Enabled and tick() - lastEndAnim > 0.07 then
+                            VMAnimActive = true
+                            for _, endAnim in ipairs(EndAnimation) do
+                                TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(endAnim.Time), {C0 = origC0 * endAnim.CFrame}):Play()
+                            end
+                            VMAnimActive = false
+                            lastEndAnim = tick()
+                        end
+                        lastEndAnim = tick()
                     end
                 end)
             else
@@ -416,24 +397,22 @@ runcode(function()
             AttackAnimEnabled.Enabled = val
         end
     })
-    local AnimationToggle = Combat:CreateToggle({
+    local KISwing = Combat:CreateToggle({
         Name = "Swing",
         CurrentValue = false,
         Flag = "Swing",
         SectionParent = Section,
         Callback = function(val)
-            swing.Enabled = val
+            Swing.Enabled = val
         end
     })
-    lplr.CharacterAdded:Connect(function()
-        resetBoxAdornment()
-    end)
 end)
 
 runcode(function()
     local Section = Blatant:CreateSection("AutoTrap", false)
-    local trappedPlayers  = {}
+    local trappedPlayers = {}
     local trapSetupTime = 0.95
+
     local function IsTrapPlaceable(position, targetPosition)
         local direction = (targetPosition - position).unit
         local ray = Ray.new(position, direction * 5)
@@ -452,6 +431,7 @@ runcode(function()
 
     local previousVelocities = {}
     local TrapDistance = {["Value"] = 22}
+
     local AutoTrap = Utility:CreateToggle({
         Name = "AutoTrap",
         CurrentValue = false,
@@ -462,28 +442,31 @@ runcode(function()
                 RunLoops:BindToHeartbeat("AutoTrap", function(dt)
                     if getItem("snap_trap") then
                         switchItem("snap_trap")
-                        local nearestPlayer = PlayerUtility.getNearestEntity(TrapDistance["Value"], false, false)
-                        if nearestPlayer and not nearestPlayer:FindFirstChild("BillboardGui") then
-                            local distance = (nearestPlayer.Character.HumanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).Magnitude
-                            if distance <= 18 then
-                                local velocity = nearestPlayer.Character.HumanoidRootPart.Velocity
-                                local acceleration = (velocity - (previousVelocities[nearestPlayer] or velocity)) / dt
-                                local predictedPosition = nearestPlayer.Character.HumanoidRootPart.Position + velocity * trapSetupTime + 0.5 * acceleration * trapSetupTime ^ 2
-                                previousVelocities[nearestPlayer] = velocity
+                        local nearestCharacter = PlayerUtility.getNearestEntity(TrapDistance["Value"], false, false)
+                        if nearestCharacter and nearestCharacter ~= lplr.Character and not nearestCharacter:FindFirstChild("BillboardGui") then
+                            local root = nearestCharacter:FindFirstChild("HumanoidRootPart") or nearestCharacter.PrimaryPart
+                            if root then
+                                local distance = (root.Position - lplr.Character.HumanoidRootPart.Position).Magnitude
+                                if distance <= 18 then
+                                    local velocity = root.Velocity
+                                    local acceleration = (velocity - (previousVelocities[nearestCharacter] or velocity)) / dt
+                                    local predictedPosition = root.Position + velocity * trapSetupTime + 0.5 * acceleration * trapSetupTime ^ 2
+                                    previousVelocities[nearestCharacter] = velocity
 
-                                if nearestPlayer.Character.Humanoid:GetState() == Enum.HumanoidStateType.Jumping or nearestPlayer.Character.Humanoid:GetState() == Enum.HumanoidStateType.Freefall then
-                                    local timeToLand = math.sqrt((2 * predictedPosition.Y) / 196.2)
-                                    predictedPosition = predictedPosition + nearestPlayer.Character.HumanoidRootPart.Velocity * timeToLand
-                                end
+                                    if nearestCharacter.Humanoid:GetState() == Enum.HumanoidStateType.Jumping or nearestCharacter.Humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+                                        local timeToLand = math.sqrt((2 * predictedPosition.Y) / 196.2)
+                                        predictedPosition = predictedPosition + root.Velocity * timeToLand
+                                    end
 
-                                local trapPosition = RoundVector(predictedPosition) + Vector3.new(0, -1, 0)
-                                if IsTrapPlaceable(trapPosition, nearestPlayer.Character.HumanoidRootPart.Position) then
-                                    local trapData = {
-                                        ["blockType"] = "snap_trap",
-                                        ["blockData"] = 0,
-                                        ["position"] = getserverpos(trapPosition)
-                                    }
-                                    game:GetService("ReplicatedStorage").rbxts_include.node_modules["@easy-games"]["block-engine"].node_modules["@rbxts"].net.out._NetManaged.PlaceBlock:InvokeServer(trapData)
+                                    local trapPosition = RoundVector(predictedPosition) + Vector3.new(0, -1, 0)
+                                    if IsTrapPlaceable(trapPosition, root.Position) then
+                                        local trapData = {
+                                            ["blockType"] = "snap_trap",
+                                            ["blockData"] = 0,
+                                            ["position"] = getserverpos(trapPosition)
+                                        }
+                                        game:GetService("ReplicatedStorage").rbxts_include.node_modules["@easy-games"]["block-engine"].node_modules["@rbxts"].net.out._NetManaged.PlaceBlock:InvokeServer(trapData)
+                                    end
                                 end
                             end
                         end
@@ -514,11 +497,10 @@ runcode(function()
     local Section = Blatant:CreateSection("Speed", false)
     local lastMoveTime = tick()
     local AutoJump = false
-    local AutoPot = false
+    local AutoJump = {Enabled = false}
     local HeatSeeker = {Enabled = false}
     local IdleThreshold = {["Value"] = 0.97}
     local SpeedDuration = {["Value"] = 0.62}
-    
     local SpeedToggle = Blatant:CreateToggle({
         Name = "Speed",
         CurrentValue = false,
@@ -527,20 +509,19 @@ runcode(function()
         Callback = function(callback)
             if callback then
                 RunLoops:BindToHeartbeat("Speed", function(dt)
+                    local lastMoveTime = tick()
                     if PlayerUtility.IsAlive(lplr) and isnetworkowner(lplr.Character.HumanoidRootPart) then
                         local speedMultiplier = SpeedMultiplier()
                         local speedIncrease = SpeedSlider.Value
                         local currentSpeed = lplr.Character.Humanoid.WalkSpeed
                         local moveDirection = lplr.Character.Humanoid.MoveDirection
-                        local newVelocity
+                        local newVelocity = Vector3.new(0, 0, 0)
                         if HeatSeeker.Enabled then
                             if moveDirection.magnitude < 0.01 then
                                 lastMoveTime = tick()
-                                newVelocity = Vector3.new(0, 0, 0)
-                            elseif tick() - lastMoveTime > SpeedDuration["Value"] then
-                                if tick() - lastMoveTime > SpeedDuration["Value"] + IdleThreshold["Value"] then
+                            elseif tick() - lastMoveTime > SpeedDuration.Value then
+                                if tick() - lastMoveTime > SpeedDuration.Value + IdleThreshold.Value then
                                     lastMoveTime = tick()
-                                    newVelocity = Vector3.new(0, 0, 0)
                                 else
                                     newVelocity = moveDirection * (1.1 * speedMultiplier - currentSpeed)
                                 end
@@ -551,10 +532,11 @@ runcode(function()
                             newVelocity = moveDirection * (speedIncrease * speedMultiplier - currentSpeed)
                         end
                         lplr.Character:TranslateBy(newVelocity * dt)
-                        if nearest and AutoJump then
-                            local distanceToNearest = (nearest.Character.HumanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).magnitude
-                            if (lplr.Character.Humanoid.FloorMaterial ~= Enum.Material.Air) and lplr.Character.Humanoid.MoveDirection ~= Vector3.zero then
-                                if distanceToNearest <= 18 then
+                        if nearest and AutoJump.Enabled then
+                           local root = nearest:FindFirstChild("HumanoidRootPart") or nearest.PrimaryPart
+                            local distanceToNearest = (root.Position - lplr.Character.HumanoidRootPart.Position).magnitude
+                            if lplr.Character.Humanoid.FloorMaterial ~= Enum.Material.Air and lplr.Character.Humanoid.MoveDirection ~= Vector3.zero then
+                                if distanceToNearest <= 18  then
                                     lplr.Character.HumanoidRootPart.Velocity = Vector3.new(lplr.Character.HumanoidRootPart.Velocity.X, 15, lplr.Character.HumanoidRootPart.Velocity.Z)
                                 end
                             end
@@ -575,7 +557,7 @@ runcode(function()
         Flag = "DistanceSlider",
         SectionParent = Section,
         Callback = function(Value)
-            SpeedSlider["Value"] = Value
+            SpeedSlider.Value = Value
         end
     })
     local HeatSeekerToggle = Blatant:CreateToggle({
@@ -583,8 +565,8 @@ runcode(function()
         CurrentValue = HeatSeeker.Enabled,
         Flag = "HeatSeeker",
         SectionParent = Section,
-        Callback = function(val)
-            HeatSeeker.Enabled = val
+        Callback = function(callback)
+            HeatSeeker.Enabled = callback
         end
     })
     local SpeedDurationSlider = Blatant:CreateSlider({
@@ -596,7 +578,7 @@ runcode(function()
         Flag = "SpeedDuration",
         SectionParent = Section,
         Callback = function(Value)
-            SpeedDuration["Value"] = Value
+            SpeedDuration.Value = Value
         end
     })
     local IdleThresholdSlider = Blatant:CreateSlider({
@@ -608,7 +590,7 @@ runcode(function()
         Flag = "IdleThreshold",
         SectionParent = Section,
         Callback = function(Value)
-            IdleThreshold["Value"] = Value
+            IdleThreshold.Value = Value
         end
     })
     local AutoJumpToggle = Blatant:CreateToggle({
@@ -616,8 +598,8 @@ runcode(function()
         CurrentValue = false,
         Flag = "AutoJump",
         SectionParent = Section,
-        Callback = function(val)
-            AutoJump = val
+        Callback = function(callback)
+            AutoJump.Enabled = callback
         end
     })
 end)
@@ -709,7 +691,6 @@ runcode(function()
             if callback then
                 TweenFrame.Visible = true
                 ScreenGui.Enabled = true
-                task.wait()
                 RunService:BindToRenderStep("Fly", Enum.RenderPriority.Camera.Value, function()
                     local currentTick = tick()
                     local deltaTime = currentTick - lastTick
@@ -726,7 +707,7 @@ runcode(function()
                         speedMultiplier = speedMultiplier + 0.6
                     end
                     if callback then
-                        speedMultiplier = speedMultiplier - 0.21
+                        speedMultiplier = speedMultiplier - 0.208
                     end
                     
                     local flySpeed = FlightSpeedSlider.Value * speedMultiplier
@@ -753,25 +734,21 @@ runcode(function()
                         local counteractingForce = -gravityForce * deltaTime
                         humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, counteractingForce, 0)
                     end
-                    
                     if airTimer > 2.35 then
                         workspace.Gravity = originalGravity
                         local ray = Ray.new(humanoidRootPart.Position, Vector3.new(0, -1000, 0))
                         local ignoreList = {lplr, character}
                         local hitPart, hitPosition = Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
-                        
                         if hitPart then
-                            local originalY = humanoidRootPart.Position.Y
-                            humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position.X, hitPosition.Y + 0, humanoidRootPart.Position.Z)
+                            local originalPosition = humanoidRootPart.Position
+                            humanoidRootPart.CFrame = CFrame.new(originalPosition.X, hitPosition.Y + 0, originalPosition.Z)
                             airTimer = 0
-                            wait(0.15)
-                            humanoidRootPart.CFrame = CFrame.new(humanoidRootPart.Position.X, originalY, humanoidRootPart.Position.Z)
+                            wait(0.2)
+                            humanoidRootPart.CFrame = CFrame.new(originalPosition.X, originalPosition.Y, originalPosition.Z)
                             airTimer = 0
-                            if TweenFrame then
-                                TweenService:Create(TweenFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                                    Position = UDim2.new(1, 0, 0, 0) 
-                                }):Play()
-                            end
+                            TweenService:Create(TweenFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+                                Position = UDim2.new(1, 0, 0, 0) 
+                            }):Play()
                         end
                     end
                 end)
@@ -784,7 +761,7 @@ runcode(function()
                 if humanoidRootPart then
                     humanoidRootPart.Velocity = Vector3.new(0, 0, 0)
                 end
-                workspace.Gravity = 193.1999969482422  
+                Workspace.Gravity = 193.1999969482422  
             end
         end
     })
@@ -828,21 +805,19 @@ end)
 local LongJumpToggle
 local ClickTP
 runcode(function()
-    local cooldowns = {
-        arrow = 0.6,
-        snowball = 0.2
-    }
-    local predictionLifetimeSec = {
-        snowball = 2,
-        arrow = 2
-    }
-    local launchVelocity = {
-        snowball = 150,
-        arrow = 400
-    }
-    local gravitationalAcceleration = {
-        snowball = workspace.Gravity,
-        arrow = 0
+    local projectilesData = {
+        arrow = {
+            cooldown = 0.6,
+            predictionLifetimeSec = 2,
+            launchVelocity = 400,
+            gravitationalAcceleration = 0,
+        },
+        snowball = {
+            cooldown = 0.2,
+            predictionLifetimeSec = 2,
+            launchVelocity = 150,
+            gravitationalAcceleration = workspace.Gravity,
+        }
     }
 
     local lastFiredTimes = {}
@@ -881,8 +856,9 @@ runcode(function()
         lastFiredTimes[projectileType] = currentTime
     end
     
-    local function shootProjectileAtTarget(player, target, projectileType, predictedPosition)
-        local cooldown = cooldowns[projectileType] or 0.6
+    local function shootProjectileAtTarget(player, target, projectileType, predictedPosition, distance)
+        local data = projectilesData[projectileType]
+        local cooldown = data.cooldown
         local currentTime = os.clock()
         
         if lastFiredTimes[projectileType] and currentTime - lastFiredTimes[projectileType] < cooldown then
@@ -890,18 +866,31 @@ runcode(function()
         end
         
         local projectileTemplate = game:GetService("ReplicatedStorage").Assets.Projectiles:FindFirstChild(projectileType)
-        if not projectileTemplate then return end
+        if not projectileTemplate then 
+            return 
+        end
         
         local clonedProjectile = projectileTemplate:Clone()
         clonedProjectile.Parent = workspace
         
         local handle = clonedProjectile:FindFirstChild("Handle")
-        if not handle then return end
+        if not handle then 
+            return 
+        end
         
         handle.Position = player.Character.PrimaryPart.Position
         
         local direction = (predictedPosition - handle.Position).unit
-        local speed = launchVelocity[projectileType]
+        
+        local baseSpeed = data.launchVelocity
+        local maxDistance = 50
+        local adjustedSpeed = baseSpeed
+        
+        if distance > maxDistance then
+            adjustedSpeed = baseSpeed * (maxDistance / distance)
+        end
+        
+        local speed = adjustedSpeed
         
         handle.CFrame = CFrame.new(handle.Position, handle.Position + direction) * CFrame.Angles(math.rad(-90), 0, 0)
         
@@ -910,7 +899,7 @@ runcode(function()
         bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
         bodyVelocity.Parent = handle
         
-        local totalGravity = gravitationalAcceleration[projectileType] * handle:GetMass()
+        local totalGravity = data.gravitationalAcceleration * handle:GetMass()
         local bodyForce = Instance.new("BodyForce")
         bodyForce.Force = Vector3.new(0, totalGravity, 0)
         bodyForce.Parent = handle
@@ -918,10 +907,10 @@ runcode(function()
         local hitDetected = false
     
         handle.Touched:Connect(function(hit)
-            if hit.Parent == target.Character then
+            if hit.Parent == target then
                 bodyVelocity:Destroy()
                 bodyForce:Destroy()
-                game:GetService("Debris"):AddItem(clonedProjectile, predictionLifetimeSec[projectileType])
+                game:GetService("Debris"):AddItem(clonedProjectile, data.predictionLifetimeSec)
                 hitDetected = true
             end
         end)
@@ -932,72 +921,75 @@ runcode(function()
             end
         end)
     end
-    
-    local function shoot(target)
+
+    local function shootat(target)
         local currentTime = os.clock()
         local bows = getAllBows()
         local availableBows = {}
     
         for _, v in ipairs(bows) do
             local itemName = v.Name
-            local cooldown = cooldowns[itemName] or 0
+            local data = projectilesData[itemName]
+            local cooldown = data and data.cooldown or 0
             if not lastFiredTimes[itemName] or currentTime - lastFiredTimes[itemName] >= cooldown then
                 table.insert(availableBows, v)
             end
         end
     
         sortItems(availableBows)
-    
         local allBowsUsed = false
         local shotsFired = 0
-        while #availableBows > 0 and not allBowsUsed do
+        local root = target:FindFirstChild("HumanoidRootPart") or target.PrimaryPart
+        if #availableBows > 0 and not allBowsUsed then
             allBowsUsed = true
             for i, v in ipairs(availableBows) do
                 local itemName = v.Name
-                local cooldown = cooldowns[itemName] or 0
+                local data = projectilesData[itemName]
+                local cooldown = data and data.cooldown or 0
                 if not lastFiredTimes[itemName] or currentTime - lastFiredTimes[itemName] >= cooldown then
                     switchItem(v)
-                    if PlayerUtility.IsAlive(target) and PlayerUtility.IsAlive(target) then
-                        shotsFired = shotsFired + 1
-                        local ping = lplr:GetNetworkPing()
-                        local projectileType = (v.Name == "snowball" and "snowball") or "arrow"
-                        local targetPosition = target.Character.PrimaryPart.Position
-                        local targetVelocity = target.Character.PrimaryPart.Velocity
-                        local predictedPositionv1 = targetPosition + targetVelocity * ping
-                        if predictedPositionv1 then
-                            local projectileFired = false
-                            if shotsFired > 0 then
-                                local args = {
-                                    [1] = v,
-                                    [2] = projectileType,
-                                    [3] = projectileType,
-                                    [4] = predictedPositionv1,
-                                    [5] = predictedPositionv1 + Vector3.new(0, 2, 0),
-                                    [6] = Vector3.new(0, -5, 0),
-                                    [7] = tostring(game:GetService("HttpService"):GenerateGUID(true)),
-                                    [8] = {
-                                        ["drawDurationSeconds"] = 1,
-                                        ["shotId"] = tostring(game:GetService("HttpService"):GenerateGUID(false))
-                                    },
-                                    [9] = workspace:GetServerTimeNow() - 0.045
-                                }
-                                local result = game:GetService("ReplicatedStorage").rbxts_include.node_modules["@rbxts"].net.out._NetManaged.ProjectileFire:InvokeServer(unpack(args))
-                                if not projectileFired then
-                                    shootProjectileAtTarget(lplr, target, projectileType, targetPosition)
-                                    projectileFired = true
-                                end
-                                if result then
-                                    table.remove(availableBows, i)
-                                    allBowsUsed = false
-                                end
-                            end
+                    shotsFired = shotsFired + 1
+                    local ping = lplr:GetNetworkPing()
+                    local projectileType = (v.Name == "snowball" and "snowball") or "arrow"
+                    local targetPosition = root.Position
+                    local targetVelocity = root.Velocity
+                    local predictedPosition = targetPosition + targetVelocity * ping
+                    local distance = (predictedPosition - lplr.Character.PrimaryPart.Position).magnitude
+                    
+                    local travelTime = (predictedPosition - root.Position).magnitude / projectilesData[projectileType].launchVelocity
+                    local predictedPositionAdjusted = predictedPosition + targetVelocity * travelTime
+                    
+                    if predictedPositionAdjusted then
+                        local projectileFired = false
+                        local args = {
+                            [1] = v,
+                            [2] = projectileType,
+                            [3] = projectileType,
+                            [4] = predictedPositionAdjusted,
+                            [5] = predictedPositionAdjusted + Vector3.new(0, 2, 0),
+                            [6] = Vector3.new(0, -5, 0),
+                            [7] = tostring(game:GetService("HttpService"):GenerateGUID(true)),
+                            [8] = {
+                                ["drawDurationSeconds"] = distance < 21 and 0.55 or 1,
+                                ["shotId"] = tostring(game:GetService("HttpService"):GenerateGUID(false))
+                            },
+                            [9] = workspace:GetServerTimeNow() - 0.045
+                        }
+                        local result = game:GetService("ReplicatedStorage").rbxts_include.node_modules["@rbxts"].net.out._NetManaged.ProjectileFire:InvokeServer(unpack(args))
+                        if result then
+                            shootProjectileAtTarget(lplr, target, projectileType, predictedPositionAdjusted, distance)
+                            projectileFired = true
+                        end
+                        if projectileFired then
+                            table.remove(availableBows, i)
+                            allBowsUsed = false
                         end
                     end
                 end
             end
         end
     end
-    
+
     local Section = Blatant:CreateSection("ProjectileAura", false)
     local notificationSent = false
     local ProjectileAura = Blatant:CreateToggle({
@@ -1008,31 +1000,33 @@ runcode(function()
         Callback = function(callback)
             if callback then
                 RunLoops:BindToHeartbeat("ShootLoop", function()
-                    if not isShooting then
-                        isShooting = true
-                        local target = PlayerUtility.getNearestEntity(50, false, true)
-                        if LongJumpToggle.CurrentValue or ClickTP.CurrentValue then
-                            if not notificationSent then
-                                GuiLibrary:Notify({
-                                    Title = "Aristois",
-                                    Content = "Long Jump or Click TP is active. ProjectileAura will not work!",
-                                    Duration = 15,
-                                    Image = 4483362458,
-                                    Actions = {
-                                        Ignore = {Name = "Okay!", Callback = function() print("The user tapped Okay!") end},
-                                    },
-                                })
-                                notificationSent = true
-                            end
-                        else
-                            notificationSent = false
+                    local target = PlayerUtility.getNearestEntity(60, false, true)
+                    local rangeCheck = PlayerUtility.getNearestEntity(Distance["Value"], false, true)
+                    if LongJumpToggle.CurrentValue or ClickTP.CurrentValue then
+                        if not notificationSent then
+                            GuiLibrary:Notify({
+                                Title = "Aristois",
+                                Content = "Long Jump or Click TP is active. ProjectileAura will not work!",
+                                Duration = 15,
+                                Image = 4483362458,
+                                Actions = {
+                                    Ignore = {Name = "Okay!", Callback = function() print("The user tapped Okay!") end},
+                                },
+                            })
+                            notificationSent = true
                         end
-                        if target and target.Team ~= lplr.Team and not target.Character:FindFirstChild("ForceField") and not LongJumpToggle.CurrentValue and not ClickTP.CurrentValue then
-                            shoot(target)
-                            task.wait(0.1)
-                        end
-                        isShooting = false
+                    else
+                        notificationSent = false
                     end
+                    if not target or ((target:FindFirstChild("Humanoid") and target:FindFirstChild("Humanoid").Health) or target:GetAttribute("Health") or 1) <= 0 then
+                        return 
+                    end
+                    if target and not isShooting then
+                        isShooting = true
+                        shoot(target)
+                    end
+                    task.wait(0.15)
+                    isShooting = false
                 end)
             else
                 RunLoops:UnbindFromHeartbeat("ShootLoop")
@@ -1040,7 +1034,6 @@ runcode(function()
         end
     })
 end)
-
 
 --[[runcode(function()
     local cooldowns = {
@@ -1193,6 +1186,14 @@ runcode(function()
     local TeleportEnabled = false
     local FlyRoot
     local FlyStartTime
+    local function TextBoxFocused()
+        for _, gui in pairs(game.Players.LocalPlayer.PlayerGui:GetDescendants()) do
+            if gui:IsA("TextBox") and gui:IsFocused() then
+                return true
+            end
+        end
+        return false
+    end
     local InfiniteFlyToggle = Blatant:CreateToggle({
         Name = "InfiniteFly",
         CurrentValue = false,
@@ -1201,19 +1202,26 @@ runcode(function()
         Callback = function(callback)
             if callback then
                 InputBeganConnection = UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+                    if TextBoxFocused() then
+                        return
+                    end
                     if input.KeyCode == Enum.KeyCode.LeftShift then
                         CtrlPressed = true
                     elseif input.KeyCode == Enum.KeyCode.Space then
                         SpacePressed = true
                     end
                 end)
+                
                 InputEndedConnection = UserInputService.InputEnded:Connect(function(input)
+                    if TextBoxFocused() then
+                        return
+                    end
                     if input.KeyCode == Enum.KeyCode.LeftShift then
                         CtrlPressed = false
                     elseif input.KeyCode == Enum.KeyCode.Space then
                         SpacePressed = false
                     end
-                end)
+                end)                          
                 lplr.CharacterAdded:Connect(function(character)
                     lplr.Character = character
                     if FlyRoot then
@@ -1467,23 +1475,17 @@ runcode(function()
                         if itemName == "apple" and health < maxHealth then
                             local item = inventory:FindFirstChild(itemName)
                             if item then
-                                local args = {
-                                    [1] = {
-                                        ["item"] = item
-                                    }
-                                }
-                                bedwars.ConsumeItem:InvokeServer(unpack(args))
+                                bedwars.ConsumeItem:InvokeServer({
+                                    ["item"] = item
+                                })
                             end
                         elseif itemName ~= "apple" then
                             local item = inventory:FindFirstChild(itemName)
                             if item then
                                 if not statusCheck or not lplr.Character:GetAttribute(statusCheck) then
-                                    local args = {
-                                        [1] = {
-                                            ["item"] = item
-                                        }
-                                    }
-                                    bedwars.ConsumeItem:InvokeServer(unpack(args))
+                                    bedwars.ConsumeItem:InvokeServer({
+                                        ["item"] = item
+                                    })
                                 end
                             end
                         end
@@ -1523,84 +1525,87 @@ end)
 
 runcode(function()
     local Section = Render:CreateSection("ViewModel", false)
-    local SwordSize = false
-    local fov = false
-    local Fov = {["Value"] = 3}
+    local SwordSizeEnabled = false
+    local FovEnabled = false
+    local Fov = {["Value"] = 70}
     local SwordScale = {["Value"] = 3}
     local SwordScaleConnection
-    local fovConnection
+    local FovConnection
     
     local ViewModelToggle = Render:CreateToggle({
-        Name = "ViewModel",
+        Name = "ViewModelAdjustments",
         CurrentValue = false,
-        Flag = "ViewModel",
+        Flag = "ViewModelToggle",
         SectionParent = Section,
-        Callback = function(enabled)
-            if enabled then
-                if SwordSize then
-                    local function scaleChildren(obj, scale)
-                        for _, child in ipairs(obj:GetChildren()) do
-                            if child:IsA("BasePart") then
-                                child.Size = child.Size / (1.5 ^ SwordScale["Value"])
+        Callback = function(callback)
+            if callback then
+                RunLoops:BindToHeartbeat("ViewModel", function()
+                    if SwordSizeEnabled then
+                        local function scaleChildren(obj, scale)
+                            for _, child in ipairs(obj:GetChildren()) do
+                                if child:IsA("BasePart") then
+                                    child.Size = child.Size / (1.5 ^ SwordScale.Value)
+                                end
+                                scaleChildren(child, scale)
                             end
-                            scaleChildren(child, scale)
+                        end
+                        for _, viewModel in ipairs(Camera.Viewmodel:GetChildren()) do
+                            if viewModel:FindFirstChild("Handle") then
+                                pcall(function()
+                                    scaleChildren(viewModel, 1.5 ^ SwordScale.Value)
+                                end)
+                            end
                         end
                     end
-                    SwordScaleConnection = Camera.Viewmodel.ChildAdded:Connect(function(viewModel)
-                        if viewModel:FindFirstChild("Handle") then
-                            pcall(function()
-                                scaleChildren(viewModel, 1.5 ^ SwordScale["Value"])
-                            end)
-                        end
-                    end)
-                end
-                if Fov then
-                    Camera.FieldOfView = Fov["Value"]
-                    fovConnection = Camera:GetPropertyChangedSignal("FieldOfView"):Connect(function()
-                        Camera.FieldOfView = Fov["Value"]
-                    end)
-                end
+                    if FovEnabled then
+                        Camera.FieldOfView = Fov.Value
+                    end
+                end)
             else
-                if SwordScaleConnection then
-                    SwordScaleConnection:Disconnect()
-                end
-                if fovConnection then
-                    fovConnection:Disconnect()
-                end
+                RunLoops:UnbindFromHeartbeat("ViewMode")
             end
         end
     })
     local SwordSizeToggle = Render:CreateToggle({
-        Name = "SwordSize",
+        Name = "Enable Sword Size Adjustment",
         CurrentValue = false,
-        Flag = "SwordSize",
+        Flag = "SwordSizeToggle",
         SectionParent = Section,
-        Callback = function(val)
-            SwordSize = val
+        Callback = function(enabled)
+            SwordSizeEnabled = enabled
         end
     })
     local SwordScaleSlider = Render:CreateSlider({
-        Name = "SwordScale",
+        Name = "Sword Scale",
         Range = {1, 10},
         Increment = 1,
-        Suffix = "Scale",
+        Suffix = "x",
         CurrentValue = 3,
-        Flag = "SwordScale",
+        Flag = "SwordScaleSlider",
         SectionParent = Section,
-        Callback = function(Value)
-            SwordScale["Value"] = Value
+        Callback = function(value)
+            SwordScale.Value = value
         end
     })
-    local DistanceSlider = Render:CreateSlider({
-        Name = "Fov",
+    local FovToggle = Render:CreateToggle({
+        Name = "Enable FOV Adjustment",
+        CurrentValue = false,
+        Flag = "FovToggle",
+        SectionParent = Section,
+        Callback = function(callback)
+            FovEnabled = callback
+        end
+    })
+    local FovSlider = Render:CreateSlider({
+        Name = "Field of View",
         Range = {1, 120},
         Increment = 1,
-        Suffix = "FieldOfView",
+        Suffix = "°",
         CurrentValue = 70,
-        Flag = "FieldOfView",
+        Flag = "FovSlider",
         SectionParent = Section,
-        Callback = function(Value)
-            Fov["Value"] = Value
+        Callback = function(value)
+            Fov.Value = value
         end
     })
 end)
@@ -1708,30 +1713,37 @@ runcode(function()
             Playericon.Image = content
         end
     end
+
     local DisplayNames = {Enabled = false}
-    
-    local function updateStatsGui(nearest)
-        local Health = clonedStatsGui.CanvasGroup.Content.Health
-        local bar = Health.bar
-        local fill = bar.fill
-        local Hp = clonedStatsGui.CanvasGroup.Content.Hp
-        local maxHealth = nearest.Character.Humanoid.MaxHealth
-        local currentHealth = nearest.Character.Humanoid.Health
-        UpdateHpText(Hp, currentHealth)
-        UpdateHealthBar(fill, currentHealth, maxHealth)
-        local Playericon = clonedStatsGui.CanvasGroup.Content.Health.Playericon
-        SetPlayerIcon(Playericon, nearest)
-        local username = clonedStatsGui.CanvasGroup.Content.username
-        username.Text = DisplayNames.Enabled and nearest.DisplayName or nearest.Name
+
+    local function updateStatsGui(character)
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid and clonedStatsGui then
+            local Health = clonedStatsGui.CanvasGroup.Content.Health
+            local bar = Health.bar
+            local fill = bar.fill
+            local Hp = clonedStatsGui.CanvasGroup.Content.Hp
+            local maxHealth = humanoid.MaxHealth
+            local currentHealth = humanoid.Health
+            UpdateHpText(Hp, currentHealth)
+            UpdateHealthBar(fill, currentHealth, maxHealth)
+            local Playericon = clonedStatsGui.CanvasGroup.Content.Health.Playericon
+            local player = Players:GetPlayerFromCharacter(character)
+            if player then
+                SetPlayerIcon(Playericon, player)
+                local username = clonedStatsGui.CanvasGroup.Content.username
+                username.Text = DisplayNames.Enabled and player.DisplayName or player.Name
+            end
+        end
     end
 
-    local function setupStatsGui(nearest)
+    local function setupStatsGui(character)
         clonedStatsGui = StatsGuiTemplate:Clone()
         clonedStatsGui.StudsOffset = Vector3.new(0.4, 0, 0)
-        clonedStatsGui.Parent = nearest.Character.HumanoidRootPart
+        clonedStatsGui.Parent = character:FindFirstChild("HumanoidRootPart")
         clonedStatsGui.Size = UDim2.new(0, 1000, 0, 100)
         clonedStatsGui.CanvasGroup.Content.Position = UDim2.new(0, 0, 0, 0)
-        updateStatsGui(nearest)
+        updateStatsGui(character)
     end
 
     local TargethubToggle = Render:CreateToggle({
@@ -1741,15 +1753,17 @@ runcode(function()
         SectionParent = Section,
         Callback = function(callback)
             if callback then
+                task.wait(0.01)
                 RunLoops:BindToHeartbeat("TargetHub", function()
-                    if PlayerUtility.IsAlive(lplr) then
-                        if nearest then
-                            local distanceToNearest = (nearest.Character.HumanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).magnitude
-                            if distanceToNearest <= 25 and PlayerUtility.IsAlive(nearest) then
+                    if nearest then
+                        local root = nearest:FindFirstChild("HumanoidRootPart") or nearest.PrimaryPart
+                        if PlayerUtility.IsAlive(lplr) and root then
+                            local distanceToNearest = (root.Position - lplr.Character.HumanoidRootPart.Position).magnitude
+                            if distanceToNearest <= 25 then
                                 if not clonedStatsGui then
                                     setupStatsGui(nearest)
                                 else
-                                    clonedStatsGui.Parent = nearest.Character.HumanoidRootPart
+                                    clonedStatsGui.Parent = root
                                     updateStatsGui(nearest)
                                 end
                             else
@@ -1763,11 +1777,6 @@ runcode(function()
                                 clonedStatsGui:Destroy()
                                 clonedStatsGui = nil
                             end
-                        end
-                    else
-                        if clonedStatsGui then
-                            clonedStatsGui:Destroy()
-                            clonedStatsGui = nil
                         end
                     end
                 end)
@@ -2303,7 +2312,6 @@ runcode(function()
         end
     })
 end)
-
 
 runcode(function()
     local Section = Utility:CreateSection("AutoHeal", false)
