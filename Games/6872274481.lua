@@ -2347,18 +2347,6 @@ runcode(function()
                 end)
             else
                 RunLoops:UnbindFromHeartbeat("Autoheal")
-                for key, value in pairs(bedwars.AnimationType) do
-                    local lowerKey = key:lower()
-                    if lowerKey:find("guitar") then
-                        bedwars.AnimationType[key] = oldAnimationTypes[key]
-                    end
-                end
-                for key, value in pairs(bedwars.SoundList) do
-                    local lowerKey = key:lower()
-                    if lowerKey:find("guitar") then
-                        bedwars.SoundList[key] = oldSoundList[key]
-                    end
-                end
             end
         end
     })
