@@ -14,7 +14,7 @@ local HttpService = game:GetService("HttpService")
 local VirtualUserService = game:GetService("VirtualUser")
 getgenv().SecureMode = true
 local GuiLibrary = loadstring(readfile("Aristois/GuiLibrary.lua"))()
-
+print("a")
 local PlayerUtility = loadstring(readfile("Aristois/Librarys/Utility.lua"))()
 local WhitelistModule = loadstring(readfile("Aristois/Librarys/Whitelist.lua"))()
 local weaponMeta = HttpService:JSONDecode(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/test/main/sword.json"))
