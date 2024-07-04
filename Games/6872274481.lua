@@ -1522,87 +1522,84 @@ end)
 
 runcode(function()
     local Section = Render:CreateSection("ViewModel", false)
-    local SwordSizeEnabled = false
-    local FovEnabled = false
-    local Fov = {["Value"] = 70}
+    local SwordSize = false
+    local fov = false
+    local Fov = {["Value"] = 3}
     local SwordScale = {["Value"] = 3}
     local SwordScaleConnection
-    local FovConnection
+    local fovConnection
     
     local ViewModelToggle = Render:CreateToggle({
-        Name = "ViewModelAdjustments",
+        Name = "ViewModel",
         CurrentValue = false,
-        Flag = "ViewModelToggle",
+        Flag = "ViewModel",
         SectionParent = Section,
-        Callback = function(callback)
-            if callback then
-                RunLoops:BindToHeartbeat("ViewModel", function()
-                    if SwordSizeEnabled then
-                        local function scaleChildren(obj, scale)
-                            for _, child in ipairs(obj:GetChildren()) do
-                                if child:IsA("BasePart") then
-                                    child.Size = child.Size / (1.5 ^ SwordScale.Value)
-                                end
-                                scaleChildren(child, scale)
+        Callback = function(enabled)
+            if enabled then
+                if SwordSize then
+                    local function scaleChildren(obj, scale)
+                        for _, child in ipairs(obj:GetChildren()) do
+                            if child:IsA("BasePart") then
+                                child.Size = child.Size / (1.5 ^ SwordScale["Value"])
                             end
-                        end
-                        for _, viewModel in ipairs(Camera.Viewmodel:GetChildren()) do
-                            if viewModel:FindFirstChild("Handle") then
-                                pcall(function()
-                                    scaleChildren(viewModel, 1.5 ^ SwordScale.Value)
-                                end)
-                            end
+                            scaleChildren(child, scale)
                         end
                     end
-                    if FovEnabled then
-                        Camera.FieldOfView = Fov.Value
-                    end
-                end)
+                    SwordScaleConnection = Camera.Viewmodel.ChildAdded:Connect(function(viewModel)
+                        if viewModel:FindFirstChild("Handle") then
+                            pcall(function()
+                                scaleChildren(viewModel, 1.5 ^ SwordScale["Value"])
+                            end)
+                        end
+                    end)
+                end
+                if Fov then
+                    Camera.FieldOfView = Fov["Value"]
+                    fovConnection = Camera:GetPropertyChangedSignal("FieldOfView"):Connect(function()
+                        Camera.FieldOfView = Fov["Value"]
+                    end)
+                end
             else
-                RunLoops:UnbindFromHeartbeat("ViewMode")
+                if SwordScaleConnection then
+                    SwordScaleConnection:Disconnect()
+                end
+                if fovConnection then
+                    fovConnection:Disconnect()
+                end
             end
         end
     })
     local SwordSizeToggle = Render:CreateToggle({
-        Name = "Enable Sword Size Adjustment",
+        Name = "SwordSize",
         CurrentValue = false,
-        Flag = "SwordSizeToggle",
+        Flag = "SwordSize",
         SectionParent = Section,
-        Callback = function(enabled)
-            SwordSizeEnabled = enabled
+        Callback = function(val)
+            SwordSize = val
         end
     })
     local SwordScaleSlider = Render:CreateSlider({
-        Name = "Sword Scale",
+        Name = "SwordScale",
         Range = {1, 10},
         Increment = 1,
-        Suffix = "x",
+        Suffix = "Scale",
         CurrentValue = 3,
-        Flag = "SwordScaleSlider",
+        Flag = "SwordScale",
         SectionParent = Section,
-        Callback = function(value)
-            SwordScale.Value = value
+        Callback = function(Value)
+            SwordScale["Value"] = Value
         end
     })
-    local FovToggle = Render:CreateToggle({
-        Name = "Enable FOV Adjustment",
-        CurrentValue = false,
-        Flag = "FovToggle",
-        SectionParent = Section,
-        Callback = function(callback)
-            FovEnabled = callback
-        end
-    })
-    local FovSlider = Render:CreateSlider({
-        Name = "Field of View",
+    local DistanceSlider = Render:CreateSlider({
+        Name = "Fov",
         Range = {1, 120},
         Increment = 1,
-        Suffix = "°",
+        Suffix = "FieldOfView",
         CurrentValue = 70,
-        Flag = "FovSlider",
+        Flag = "FieldOfView",
         SectionParent = Section,
-        Callback = function(value)
-            Fov.Value = value
+        Callback = function(Value)
+            Fov["Value"] = Value
         end
     })
 end)
