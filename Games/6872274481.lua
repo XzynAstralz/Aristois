@@ -1020,7 +1020,7 @@ runcode(function()
                     end
                     if target and not isShooting then
                         isShooting = true
-                        shoot(target)
+                        shootat(target)
                     end
                     task.wait(0.15)
                     isShooting = false
