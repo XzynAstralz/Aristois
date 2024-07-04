@@ -53,7 +53,10 @@ local AristoisUpdater = {
         
         for _, filePath in ipairs(self.filesToUpdate) do
             local localFilePath = "Aristois/" .. filePath
-            if not self.betterisfile(localFilePath) or self.updateAvailable() then
+            if not self.betterisfile(filePath) or self.updateAvailable(commitHash) then
+                if self.betterisfile(filePath) then
+                    delfile(filePath)
+                end
                 local fileUrl = baseUrl .. filePath
                 table.insert(threads, coroutine.create(function()
                     downloadFileAsync(fileUrl, localFilePath)
@@ -71,7 +74,30 @@ local AristoisUpdater = {
             end
         end
         
+        local allFilesDownloaded = true
+        for _, filePath in ipairs(self.filesToUpdate) do
+            local localFilePath = "Aristois/" .. filePath
+            if not self.betterisfile(localFilePath) then
+                allFilesDownloaded = false
+                break
+            end
+        end
+        if allFilesDownloaded then
+            local mainScriptPath = "Aristois/MainScript.lua"
+            if self.betterisfile(mainScriptPath) then
+                loadstring(readfile(mainScriptPath))()
+            end
+        end
+        
         writefile("Aristois/commithash.txt", commitHash)
+    end,
+    
+    updateAvailable = function(self, latestCommitHash)
+        if self.betterisfile("Aristois/commithash.txt") then
+            local storedHash = readfile("Aristois/commithash.txt")
+            return storedHash ~= latestCommitHash
+        end
+        return true
     end,
     
     downloadIfNotExists = function(self, url, filePath)
@@ -98,10 +124,4 @@ end
 local latestCommit = fetchLatestCommit()
 if latestCommit then
     AristoisUpdater:updateFiles(latestCommit)
-end
-
-if not shared.Executed then
-    loadstring(readfile("Aristois/MainScript.lua"))()
-else
-    warn("Already executed, cannot run again.")
 end
