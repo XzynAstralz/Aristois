@@ -3,12 +3,28 @@ local lplr = Players.LocalPlayer
 
 local Utility = {}
 
-function Utility.IsAlive(plr)
-    local plr = plr or lplr
-    return plr and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0
+function Utility.IsAlive(entity)
+    if not entity then
+        return false
+    end
+    
+    local health = entity:GetAttribute("Health")
+    if health and health > 0 then
+        return true
+    end
+    
+    if entity:IsA("Player") then
+        local character = entity.Character
+        if character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
+            return true
+        end
+    end
+    
+    return false
 end
 
 function Utility.getNearestEntity(maxDist, findNearestHealthEntity, teamCheck)
+    if not Utility.IsAlive(lplr) then return end
     local targetData = {
         nearestEntity = nil,
         dist = math.huge,
@@ -27,15 +43,17 @@ function Utility.getNearestEntity(maxDist, findNearestHealthEntity, teamCheck)
     end
     
     for _, entity in next, game.CollectionService:GetTagged("entity") do
-        local humanoidRootPart = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
-        if humanoidRootPart and entity.Name ~= "BarrelEntity" then
-            local mag = (humanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).Magnitude
-            local hum = entity:FindFirstChild("Humanoid")
-            local health = (hum and hum.Health) or entity:GetAttribute("Health") or 1
+        if Utility.IsAlive(entity) then
+            local humanoidRootPart = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
+            if humanoidRootPart and entity.Name ~= "BarrelEntity" then
+                local mag = (humanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).Magnitude
+                local hum = entity:FindFirstChild("Humanoid")
+                local health = (hum and hum.Health) or entity:GetAttribute("Health") or 1
 
-            if mag < maxDist then
-                if not teamCheck or not entity:GetAttribute("Team") or entity:GetAttribute("Team") ~= teamAttribute then
-                    updateTargetData(entity, mag, health)
+                if mag < maxDist then
+                    if not teamCheck or not entity:GetAttribute("Team") or entity:GetAttribute("Team") ~= teamAttribute then
+                        updateTargetData(entity, mag, health)
+                    end
                 end
             end
         end
@@ -57,6 +75,58 @@ function Utility.getNearestEntity(maxDist, findNearestHealthEntity, teamCheck)
     end
 
     return targetData.nearestEntity
+end
+
+function Utility.getNearestEntities(maxDist, findNearestHealthEntity, teamCheck)
+    if not Utility.IsAlive(lplr) then return end
+    local entities = {}
+    local teamAttribute = lplr.Character:GetAttribute("Team")
+    
+    local function addEntityData(entity, mag, health)
+        table.insert(entities, {entity = entity, distance = mag, health = health})
+    end
+    
+    for _, entity in next, game.CollectionService:GetTagged("entity") do
+        if Utility.IsAlive(entity) then
+            local humanoidRootPart = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
+            if humanoidRootPart and entity.Name ~= "BarrelEntity"  then
+                local mag = (humanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).Magnitude
+                local hum = entity:FindFirstChild("Humanoid")
+                local health = (hum and hum.Health) or entity:GetAttribute("Health") or 1
+
+                if mag < maxDist then
+                    if not teamCheck or not entity:GetAttribute("Team") or entity:GetAttribute("Team") ~= teamAttribute then
+                        addEntityData(entity, mag, health)
+                    end
+                end
+            end
+        end
+    end
+    
+    for _, entity in next, game.CollectionService:GetTagged("GolemBoss") do
+        local humanoidRootPart = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
+        if humanoidRootPart then
+            local mag = (humanoidRootPart.Position - lplr.Character.HumanoidRootPart.Position).Magnitude
+            local hum = entity:FindFirstChild("Humanoid")
+            local health = (hum and hum.Health) or entity:GetAttribute("Health") or 1
+
+            if mag < maxDist then
+                if not teamCheck or not entity:GetAttribute("Team") or entity:GetAttribute("Team") ~= teamAttribute then
+                    addEntityData(entity, mag, health)
+                end
+            end
+        end
+    end
+
+    table.sort(entities, function(a, b)
+        if findNearestHealthEntity then
+            return a.health < b.health
+        else
+            return a.distance < b.distance
+        end
+    end)
+
+    return entities
 end
 
 function Utility.getNearestPlayerToMouse(teamCheck)

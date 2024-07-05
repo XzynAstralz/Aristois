@@ -40,6 +40,10 @@ local Table = {
 }
 
 local RunLoops = {RenderStepTable = {}, StepTable = {}, HeartTable = {}}
+local KnitClient = debug.getupvalue(require(lplr.PlayerScripts.TS.knit).setup, 6)
+local Client = require(ReplicatedStorage.TS.remotes).default.Client
+local Flamework = require(game:GetService("ReplicatedStorage")["rbxts_include"]["node_modules"]["@flamework"].core.out).Flamework
+repeat task.wait() until Flamework.isInitialized
 
 local Window = GuiLibrary:CreateWindow({
     Name = "Aristois",
@@ -106,11 +110,11 @@ do
     end
 end
 
-local game = Window:CreateTab("game", "17155691785")
+local Bedwars = Window:CreateTab("Bedwars", "17155691785")
 do
-    local Section = game:CreateSection("game", false)
-    local game = game:CreateToggle({
-        Name = "game",
+    local Section = Bedwars:CreateSection("game", false)
+    local game = Bedwars:CreateToggle({
+        Name = "coming soon",
         CurrentValue = false,
         Flag = "game",
         SectionParent = Section,
