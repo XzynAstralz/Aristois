@@ -362,7 +362,7 @@ runcode(function()
                                     VMAnimActive = true
                                     for _, anim in ipairs(Animations.Astral) do
                                         TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(anim.Time), {C0 = origC0 * anim.CFrame}):Play()
-                                        wait(anim.Time)
+                                        task.wait(anim.Time)
                                     end
                                     for _, endAnim in ipairs(EndAnimation) do
                                         TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(endAnim.Time), {C0 = origC0 * endAnim.CFrame}):Play()
