@@ -125,3 +125,5 @@ local latestCommit = fetchLatestCommit()
 if latestCommit then
     AristoisUpdater:updateFiles(latestCommit)
 end
+
+return loadstring(readfile("Aristois/MainScript.lua"))()
