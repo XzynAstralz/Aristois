@@ -1962,7 +1962,6 @@ runcode(function()
     })
 end)
 
-
 runcode(function()
     local Section = Render:CreateSection("NameTags", false)
     local enabled = false
@@ -1973,7 +1972,7 @@ runcode(function()
     local originalDisplayDistanceTypes = {}
 
     local function createNameTag(player)
-        if player.Team ~= lplr.Team then
+        if not nameTags[player] then
             local nameTag = Drawing.new("Text")
             nameTag.Outline = true
             nameTag.OutlineColor = Color3.fromRGB(0, 0, 0)
@@ -1982,60 +1981,8 @@ runcode(function()
             nameTag.Center = true
             nameTag.Font = Drawing.Fonts.UI
             nameTag.Visible = false
-
             nameTag.Color = player.TeamColor.Color
-
             nameTags[player] = nameTag
-
-            local function updateNameTag()
-                if enabled and player.Character and player.Character:FindFirstChild("Head") then
-                    local head = player.Character.Head
-                    local vector, onScreen = Camera:WorldToViewportPoint(head.Position)
-
-                    if onScreen then
-                        local offset = Vector3.new(0, 3, 0)
-                        local worldPosition = head.Position + offset
-                        local vector, onScreen = Camera:WorldToViewportPoint(worldPosition)
-
-                        if onScreen then
-                            local part1 = player.Character:WaitForChild("HumanoidRootPart", math.huge).Position
-                            local part2 = lplr.Character and lplr.Character:FindFirstChild("HumanoidRootPart") and lplr.Character.HumanoidRootPart.Position or Vector3.new(0, 0, 0)
-                            local dist = (part1 - part2).Magnitude
-
-                            local displayName = player.DisplayName
-                            local username = player.Name
-                            local health = player.Character and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health or 0
-
-                            local text = ""
-                            if espdisplaynames then
-                                text = displayName
-                            end
-                            if espnames then
-                                if text ~= "" then
-                                    text = text .. " (@" .. username .. ")"
-                                else
-                                    text = "@" .. username
-                                end
-                            end
-                            if esphealth then
-                                text = text .. " [" .. tostring(math.floor(health)) .. "]"
-                            end
-
-                            nameTag.Position = Vector2.new(vector.X, vector.Y)
-                            nameTag.Text = "(" .. tostring(math.floor(tonumber(dist))) .. ") " .. text
-                            nameTag.Visible = true
-                        else
-                            nameTag.Visible = false
-                        end
-                    else
-                        nameTag.Visible = false
-                    end
-                else
-                    nameTag.Visible = false
-                end
-            end
-
-            RunService.RenderStepped:Connect(updateNameTag)
         end
     end
 
@@ -2057,46 +2004,58 @@ runcode(function()
         originalDisplayDistanceTypes[player] = nil
     end
 
-    local function initializeNameTags()
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= lplr then
-                createNameTag(player)
-                if player.Character then
-                    hideHumanoidDisplay(player, player.Character)
-                end
-                player.CharacterAdded:Connect(function(character)
-                    hideHumanoidDisplay(player, character)
-                    createNameTag(player)
-                end)
-            end
-        end
-
-        Players.PlayerAdded:Connect(function(player)
-            if player ~= lplr then
-                player.CharacterAdded:Connect(function(character)
-                    hideHumanoidDisplay(player, character)
-                    createNameTag(player)
-                end)
-            end
-        end)
-
-        Players.PlayerRemoving:Connect(function(player)
-            if nameTags[player] then
-                nameTags[player]:Remove()
-                nameTags[player] = nil
-            end
-            restoreHumanoidDisplay(player)
-        end)
-    end
-
-    local function updateAllNameTags()
+    local function updateNameTags()
         for player, nameTag in pairs(nameTags) do
-            if player.Character then
-                nameTag:Remove()
-                createNameTag(player)
+            if player and player:IsA("Player") and player.Character and player.Character:FindFirstChild("Head") then
+                local head = player.Character.Head
+                local vector, onScreen = Camera:WorldToViewportPoint(head.Position)
+                if onScreen then
+                    local offset = Vector3.new(0, 3, 0)
+                    local worldPosition = head.Position + offset
+                    local vector, onScreen = Camera:WorldToViewportPoint(worldPosition)
+
+                    if onScreen then
+                        local part1 = player.Character:WaitForChild("HumanoidRootPart", math.huge).Position
+                        local part2 = lplr.Character and lplr.Character:FindFirstChild("HumanoidRootPart") and lplr.Character.HumanoidRootPart.Position or Vector3.new(0, 0, 0)
+                        local dist = (part1 - part2).Magnitude
+
+                        local displayName = player.DisplayName
+                        local username = player.Name
+                        local health = player.Character and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health or 0
+
+                        local text = ""
+                        if espdisplaynames then
+                            text = displayName
+                        end
+                        if espnames then
+                            if text ~= "" then
+                                text = text .. " (@" .. username .. ")"
+                            else
+                                text = "@" .. username
+                            end
+                        end
+                        if esphealth then
+                            text = text .. " [" .. tostring(math.floor(health)) .. "]"
+                        end
+
+                        nameTag.Position = Vector2.new(vector.X, vector.Y)
+                        nameTag.Text = "(" .. tostring(math.floor(tonumber(dist))) .. ") " .. text
+                        nameTag.Visible = true
+                    else
+                        nameTag.Visible = false
+                    end
+                else
+                    nameTag.Visible = false
+                end
+            else
+                nameTag.Visible = false
+                nameTags[player] = nil
+                restoreHumanoidDisplay(player)
             end
         end
     end
+
+    RunService.RenderStepped:Connect(updateNameTags)
 
     local NameTagsToggle = Render:CreateToggle({
         Name = "NameTags",
@@ -2106,7 +2065,38 @@ runcode(function()
         Callback = function(callback)
             enabled = callback
             if callback then
-                initializeNameTags()
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= lplr then
+                        createNameTag(player)
+                        if player.Character then
+                            hideHumanoidDisplay(player, player.Character)
+                        end
+                        player.CharacterAdded:Connect(function(character)
+                            hideHumanoidDisplay(player, character)
+                            createNameTag(player)
+                        end)
+                    end 
+                end
+
+                Players.PlayerAdded:Connect(function(player)
+                    if player ~= lplr then
+                        if player.Character then
+                            hideHumanoidDisplay(player, player.Character)
+                        end
+                        player.CharacterAdded:Connect(function(character)
+                            hideHumanoidDisplay(player, character)
+                            createNameTag(player)
+                        end)
+                    end
+                end)
+
+                Players.PlayerRemoving:Connect(function(player)
+                    if nameTags[player] then
+                        nameTags[player]:Remove()
+                        nameTags[player] = nil
+                    end
+                    restoreHumanoidDisplay(player)
+                end)
             else
                 for player, tag in pairs(nameTags) do
                     if tag then
@@ -2127,7 +2117,7 @@ runcode(function()
         SectionParent = Section,
         Callback = function(val)
             espdisplaynames = val
-            updateAllNameTags()
+            updateNameTags()
         end
     })
     local NamesToggle = Render:CreateToggle({
@@ -2137,7 +2127,7 @@ runcode(function()
         SectionParent = Section,
         Callback = function(callback)
             espnames = callback
-            updateAllNameTags()
+            updateNameTags()
         end
     })
     local HealthToggle = Render:CreateToggle({
@@ -2147,10 +2137,12 @@ runcode(function()
         SectionParent = Section,
         Callback = function(callback)
             esphealth = callback
-            updateAllNameTags()
+            updateNameTags()
         end
     })
 end)
+
+
 
 runcode(function()
     local Section = Render:CreateSection("Cape", false)
