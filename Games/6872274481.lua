@@ -232,7 +232,6 @@ end
 
 local nearestEntities = {}
 local Distance = {["Value"] = 22}
-
 runcode(function()
     local Section = Blatant:CreateSection("Killaura", false)
     local FacePlayerEnabled = {Enabled = false}
@@ -564,9 +563,13 @@ runcode(function()
                             newVelocity = moveDirection * (speedIncrease * speedMultiplier - currentSpeed)
                         end
                         lplr.Character:TranslateBy(newVelocity * dt)
-                        if entity and AutoJump.Enabled then
-                            if lplr.Character.Humanoid.FloorMaterial ~= Enum.Material.Air and lplr.Character.Humanoid.MoveDirection ~= Vector3.zero then
-                                lplr.Character.HumanoidRootPart.Velocity = Vector3.new(lplr.Character.HumanoidRootPart.Velocity.X, 15, lplr.Character.HumanoidRootPart.Velocity.Z)
+                        for _, entityData in ipairs(nearestEntities) do
+                            local entity = entityData.entity
+                            local root = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
+                            if root and AutoJump.Enabled then
+                                if lplr.Character.Humanoid.FloorMaterial ~= Enum.Material.Air and lplr.Character.Humanoid.MoveDirection ~= Vector3.zero then
+                                    lplr.Character.HumanoidRootPart.Velocity = Vector3.new(lplr.Character.HumanoidRootPart.Velocity.X, 15, lplr.Character.HumanoidRootPart.Velocity.Z)
+                                end
                             end
                         end
                     end
