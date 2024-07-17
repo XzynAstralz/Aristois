@@ -45,7 +45,6 @@ local Flamework = require(game:GetService("ReplicatedStorage")["rbxts_include"][
 repeat task.wait() until Flamework.isInitialized
 
 local BedWars = {}
-local gamedata = {}
 BedWars.__index = BedWars
 
 local Window = GuiLibrary:CreateWindow({
@@ -158,7 +157,6 @@ local inventory
 local connection
 
 connection = RunService.Heartbeat:Connect(function()
-    local lplr = Players.LocalPlayer 
     if lplr and lplr.Character and lplr.Character:FindFirstChild("InventoryFolder") then
         task.wait()
         inventory = lplr.Character:FindFirstChild("InventoryFolder").Value
@@ -219,15 +217,39 @@ local function switchItem(tool, lol)
 end
 
 local function SpeedMultiplier(flight)
-    local baseMultiplier = 0.985
-    local multiplier = baseMultiplier
-    if lplr.Character:GetAttribute("StatusEffect_speed") then
-        multiplier = multiplier + 0.6
+    local baseMultiplier = 0
+    local multiplier = 1
+    local funny = false
+    local characterAttributes = lplr.Character:GetAttributes()
+
+    if characterAttributes.StatusEffect_speed then
+        multiplier = multiplier * 1.6
+        funny = true
     end
-    if flight  then
-        multiplier = multiplier - 0.5
-    end     
-    return multiplier
+
+    if characterAttributes.SpeedBoost then
+        local speedBoostMultiplier = characterAttributes.SpeedBoost
+        multiplier = multiplier * speedBoostMultiplier
+        funny = true
+    end
+
+    if characterAttributes.GrimReaperChannel then
+        multiplier = multiplier + 1.86
+        funny = true
+    end
+
+    if flight then
+        multiplier = multiplier + 0.97
+        funny = true
+    end
+
+    if funny then
+        baseMultiplier = baseMultiplier + (multiplier - 1) * 0.985
+    else
+        baseMultiplier = 0.985
+    end
+    
+    return baseMultiplier
 end
 
 local nearestEntities = {}
@@ -293,6 +315,16 @@ runcode(function()
             end
         end
     end
+    local function clearAdornments()
+        if BoxesEnabled.Enabled then
+            for _, boxHandleAdornment in pairs(activeAdornments) do
+                boxHandleAdornment.Adornee = nil
+                boxHandleAdornment.Parent = nil
+            end
+            activeAdornments = {}
+        end
+    end
+
     -- credits vape
     local oldViewmodelAnimation = bedwars.ViewmodelController.playAnimation
     local origC0 = ReplicatedStorage.Assets.Viewmodel.RightHand.RightWrist.C0
@@ -318,70 +350,65 @@ runcode(function()
                     if not PlayerUtility.IsAlive(lplr) then return end
                     nearestEntities = PlayerUtility.getNearestEntities(Distance["Value"], false, true, 5)
                     if #nearestEntities <= 0 then
-                        if BoxesEnabled.Enabled then
-                            for _, boxHandleAdornment in pairs(activeAdornments) do
-                                boxHandleAdornment.Adornee = nil
-                                boxHandleAdornment.Parent = nil
-                            end
-                            activeAdornments = {}
-                        end
+                        clearAdornments()
                         return 
                     end
-                    for _, entityData in ipairs(nearestEntities) do
-                        local entity = entityData.entity
-                        local root = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
-                        if root then
-                            local distanceToEntity = (root.Position - lplr.Character.HumanoidRootPart.Position).magnitude
-                            if distanceToEntity <= Distance["Value"] then
-                                if bedwars.matchState ~= 0 then
-                                    local selfPos = lplr.Character.HumanoidRootPart.Position + ((distanceToEntity > 14.3) and (CFrame.lookAt(lplr.Character.HumanoidRootPart.Position, root.Position).LookVector * 4) or Vector3.new(0, 0, 0))
-                                    switchItem(sword.tool)
-                                    bedwars.SwordController.lastAttack = game:GetService("Workspace"):GetServerTimeNow() - 0.11
-                                    bedwars.SwordHit:FireServer({
-                                        weapon = sword.tool,
-                                        entityInstance = entity,
-                                        validate = {
-                                            raycast = {},
-                                            targetPosition = {value = root.Position},
-                                            selfPosition = {value = selfPos},
-                                        },
-                                        chargedAttack = {chargeRatio = 0}
-                                    })
+                    local nearestEntityData = nearestEntities[1]
+                    local entity = nearestEntityData.entity
+                    local root = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
+                    if root then
+                        local distanceToEntity = (root.Position - lplr.Character.HumanoidRootPart.Position).magnitude
+                        if distanceToEntity <= Distance["Value"] then
+                            if bedwars.matchState ~= 0 then
+                                local selfPos = lplr.Character.HumanoidRootPart.Position + ((distanceToEntity > 14.3) and (CFrame.lookAt(lplr.Character.HumanoidRootPart.Position, root.Position).LookVector * 4) or Vector3.new(0, 0, 0))
+                                switchItem(sword.tool)
+                                bedwars.SwordController.lastAttack = game:GetService("Workspace"):GetServerTimeNow() - 0.11
+                                bedwars.SwordHit:FireServer({
+                                    weapon = sword.tool,
+                                    entityInstance = entity,
+                                    validate = {
+                                        raycast = {},
+                                        targetPosition = {value = root.Position},
+                                        selfPosition = {value = selfPos},
+                                    },
+                                    chargedAttack = {chargeRatio = 0}
+                                })
+                            end
+                            if FacePlayerEnabled.Enabled then
+                                lplr.Character:SetPrimaryPartCFrame(CFrame.new(lplr.Character.HumanoidRootPart.Position, Vector3.new(root.Position.X, lplr.Character.HumanoidRootPart.Position.Y, root.Position.Z)))
+                            end
+                            if SwingEnabled.Enabled then
+                                if (tick() - lastSwingTime) >= 0.14 then
+                                    bedwars.SwordController:playSwordEffect(sword, false)
+                                    lastSwingTime = tick()
                                 end
-                                if FacePlayerEnabled.Enabled then
-                                    lplr.Character:SetPrimaryPartCFrame(CFrame.new(lplr.Character.HumanoidRootPart.Position, Vector3.new(root.Position.X, lplr.Character.HumanoidRootPart.Position.Y, root.Position.Z)))
+                            end
+                            if AttackAnimEnabled.Enabled and distanceToEntity < Distance["Value"] and not VMAnimActive then
+                                VMAnimActive = true
+                                for _, anim in ipairs(Animations.Astral) do
+                                    TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(anim.Time), {C0 = origC0 * anim.CFrame}):Play()
+                                    task.wait(anim.Time)
                                 end
-                                if SwingEnabled.Enabled then
-                                    if (tick() - lastSwingTime) >= 0.14 then
-                                        bedwars.SwordController:playSwordEffect(sword, false)
-                                        lastSwingTime = tick()
-                                    end
+                                for _, endAnim in ipairs(EndAnimation) do
+                                    TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(endAnim.Time), {C0 = origC0 * endAnim.CFrame}):Play()
                                 end
-                                if AttackAnimEnabled.Enabled and distanceToEntity < Distance["Value"] and not VMAnimActive then
-                                    VMAnimActive = true
-                                    for _, anim in ipairs(Animations.Astral) do
-                                        TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(anim.Time), {C0 = origC0 * anim.CFrame}):Play()
-                                        task.wait(anim.Time)
-                                    end
-                                    for _, endAnim in ipairs(EndAnimation) do
-                                        TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(endAnim.Time), {C0 = origC0 * endAnim.CFrame}):Play()
-                                    end
-                                    VMAnimActive = false
-                                elseif AttackAnimEnabled.Enabled and tick() - lastEndAnim > 0.13 then
-                                    VMAnimActive = true
-                                    for _, endAnim in ipairs(EndAnimation) do
-                                        TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(endAnim.Time), {C0 = origC0 * endAnim.CFrame}):Play()
-                                    end
-                                    VMAnimActive = false
-                                    lastEndAnim = tick()
+                                VMAnimActive = false
+                            elseif AttackAnimEnabled.Enabled and tick() - lastEndAnim > 0.13 then
+                                VMAnimActive = true
+                                for _, endAnim in ipairs(EndAnimation) do
+                                    TweenService:Create(Camera.Viewmodel.RightHand.RightWrist, TweenInfo.new(endAnim.Time), {C0 = origC0 * endAnim.CFrame}):Play()
                                 end
-                                updateBoxAdornments(root)
+                                VMAnimActive = false
                                 lastEndAnim = tick()
                             end
+                            updateBoxAdornments(root)
+                            lastEndAnim = tick()
                         else
-                            boxHandleAdornment.Adornee = nil
-                            boxHandleAdornment.Parent = nil
+                            clearAdornments()
                         end
+                    else
+                        boxHandleAdornment.Adornee = nil
+                        boxHandleAdornment.Parent = nil
                     end
                 end)
             else
@@ -803,11 +830,12 @@ runcode(function()
             local character = lplr.Character
             local humanoid = character and character:FindFirstChildOfClass("Humanoid")
             local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
-
+    
             local lastTick = tick()
             local airTimer = 0
             local i = 0
             local verticalVelocity = 0
+            
             if callback then
                 TweenFrame.Visible = true
                 ScreenGui.Enabled = true
@@ -821,14 +849,7 @@ runcode(function()
                     
                     UpdateSecondLeft(remainingTime)
                     
-                    local speedMultiplier = 0.95
-                    workspace.Gravity = 0  
-                    if lplr.Character:GetAttribute("StatusEffect_speed") then
-                        speedMultiplier = speedMultiplier + 0.6
-                    end
-                    if callback then
-                        speedMultiplier = speedMultiplier - 0.202
-                    end
+                    local speedMultiplier = SpeedMultiplier(true) -- Use SpeedMultiplier function
                     
                     local flySpeed = FlightSpeedSlider.Value * speedMultiplier
                     local flyVelocity = humanoid.MoveDirection * flySpeed
@@ -854,9 +875,8 @@ runcode(function()
                         local counteractingForce = -gravityForce * deltaTime
                         humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, counteractingForce, 0)
                     end
-
+    
                     if airTimer > 2.26 then
-                        workspace.Gravity = originalGravity
                         local ray = Ray.new(humanoidRootPart.Position, Vector3.new(0, -1000, 0))
                         local ignoreList = {lplr, character}
                         local hitPart, hitPosition = Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
@@ -882,10 +902,10 @@ runcode(function()
                 if humanoidRootPart then
                     humanoidRootPart.Velocity = Vector3.new(0, 0, 0)
                 end
-                Workspace.Gravity = 193.1999969482422  
             end
         end
     })
+    
     local FlightSpeedSliderInstance = Blatant:CreateSlider({
         Name = "FlightSpeed",
         Range = {1, 23},
@@ -2280,17 +2300,7 @@ runcode(function()
     local ClickTPRaycast = RaycastParams.new()
     ClickTPRaycast.RespectCanCollide = true
     ClickTPRaycast.FilterType = Enum.RaycastFilterType.Blacklist
-    local ClickTPbind = false
-
-    local function getItem(itemName)
-        if PlayerUtility.IsAlive(lplr) then
-            local inventoryFolder = lplr.Character:FindFirstChild("InventoryFolder")
-            if inventoryFolder and inventoryFolder:FindFirstChild(itemName) then
-                return true
-            end
-        end
-        return false
-    end
+    local ClickTPbind = fals
 
     ClickTP = Utility:CreateToggle({
         Name = "ClickTP",
