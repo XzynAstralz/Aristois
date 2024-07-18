@@ -407,14 +407,12 @@ runcode(function()
                             clearAdornments()
                         end
                     else
-                        boxHandleAdornment.Adornee = nil
-                        boxHandleAdornment.Parent = nil
+                        clearAdornments()
                     end
                 end)
             else
                 RunLoops:UnbindFromHeartbeat("Killaura")
-                boxHandleAdornment.Adornee = nil
-                boxHandleAdornment.Parent = nil
+                clearAdornments()
                 bedwars.ViewmodelController.playAnimation = oldViewmodelAnimation
                 oldViewmodelAnimation = nil
             end
