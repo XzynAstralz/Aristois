@@ -12,6 +12,7 @@ local TextChatService = game:GetService("TextChatService")
 local getcustomasset = getsynasset or getcustomasset
 local HttpService = game:GetService("HttpService")
 local VirtualUserService = game:GetService("VirtualUser")
+getgenv().SecureMode = true
 local GuiLibrary = loadstring(readfile("Aristois/GuiLibrary.lua"))()
 local PlayerUtility = loadstring(readfile("Aristois/Librarys/Utility.lua"))()
 local WhitelistModule = loadstring(readfile("Aristois/Librarys/Whitelist.lua"))()
@@ -136,6 +137,7 @@ function BedWars.new()
     self.ConsumeItem = ReplicatedStorage.rbxts_include.node_modules["@rbxts"].net.out._NetManaged.ConsumeItem
     self.PlayGuitar = ReplicatedStorage["rbxts_include"]["node_modules"]["@rbxts"].net.out["_NetManaged"].PlayGuitar
     self.ClientHandlerStore = require(lplr.PlayerScripts.TS.ui.store).ClientStore
+    self.ReportPlayer = ReplicatedStorage.rbxts_include.node_modules["@rbxts"].net.out._NetManaged.ReportPlayer
 
     setmetatable(self, {
         __index = function(t, k)
@@ -2162,8 +2164,6 @@ runcode(function()
     })
 end)
 
-
-
 runcode(function()
     local Section = Render:CreateSection("Cape", false)
     local function CreateCape(character, texture)
@@ -2510,6 +2510,153 @@ runcode(function()
         SectionParent = Section,
         Callback = function(Value)
             ChatSpammerDelay["Value"] = Value
+        end
+    })
+end)
+
+runcode(function()
+    local Section = Utility:CreateSection("AutoReport", false)
+    local Reported = {}
+    local ReportedCount = 0
+
+    local instance = {instances = {}}
+    function instance.new(class, properties)
+        local inst = Instance.new(class)
+        for property, value in next, properties do
+            inst[property] = value
+        end
+        
+        table.insert(instance.instances, inst)
+        return inst
+    end
+    
+    local ScreenGui = instance.new("ScreenGui", {
+        Parent = game:GetService("CoreGui");
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling;
+    })
+    ScreenGui.Enabled = false
+    
+    local Frame = instance.new("Frame", {
+        Parent = ScreenGui;
+        BackgroundColor3 = Color3.fromRGB(31, 31, 31);
+        BorderColor3 = Color3.fromRGB(0, 0, 0);
+        BorderSizePixel = 0;
+        Position = UDim2.new(0, 0, 0.430075198, 0);
+        Size = UDim2.new(0, 181, 0, 48);
+    })
+    
+    local ReportedText = instance.new("TextLabel", {
+        Name = "Reported";
+        Parent = Frame;
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+        BackgroundTransparency = 1.000;
+        BorderColor3 = Color3.fromRGB(0, 0, 0);
+        BorderSizePixel = 0;
+        Size = UDim2.new(0, 181, 0, 48);
+        Font = Enum.Font.Ubuntu;
+        Text = " Reported: 0";
+        TextColor3 = Color3.fromRGB(255, 255, 255);
+        TextSize = 16.000;
+        TextXAlignment = Enum.TextXAlignment.Left;
+    })
+
+    local function loadReportsFromFile()
+        if isfile("reports.txt") then
+            local file = readfile("reports.txt")
+            ReportedCount = game.HttpService:JSONDecode(file).Count or 0
+            ReportedText.Text = " Reported: " .. ReportedCount
+        end
+    end
+
+    local function saveReportsToFile()
+        writefile("reports.txt", game.HttpService:JSONEncode({ Count = ReportedCount }))
+    end
+
+    local function loadPositionFromFile()
+        if isfile("report_position.txt") then
+            local positionData = readfile("report_position.txt")
+            local position = game.HttpService:JSONDecode(positionData)
+            Frame.Position = UDim2.new(position.ScaleX, position.OffsetX, position.ScaleY, position.OffsetY)
+        end
+    end
+
+    local function savePositionToFile()
+        local position = Frame.Position
+        local positionData = {
+            ScaleX = position.X.Scale,
+            OffsetX = position.X.Offset,
+            ScaleY = position.Y.Scale,
+            OffsetY = position.Y.Offset
+        }
+        writefile("report_position.txt", game.HttpService:JSONEncode(positionData))
+    end
+
+    loadReportsFromFile()
+    loadPositionFromFile()
+
+    local dragging = false
+    local dragInput, mousePos, framePos
+
+    Frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            mousePos = input.Position
+            framePos = Frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    savePositionToFile()
+                end
+            end)
+        end
+    end)
+
+    Frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - mousePos
+            Frame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+        end
+    end)
+
+    local AutoReport = Utility:CreateToggle({
+        Name = "AutoReport",
+        CurrentValue = false,
+        Flag = "AutoReport",
+        SectionParent = Section,
+        Callback = function(callback)
+            if callback then
+                RunLoops:BindToHeartbeat("AutoReport", function()
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= lplr and not Reported[player.UserId] then
+                            bedwars.ReportPlayer:FireServer({player.UserId})
+                            task.wait()
+                            Reported[player.UserId] = true
+                            ReportedCount = ReportedCount + 1
+                            ReportedText.Text = " Reported: " .. ReportedCount
+                            saveReportsToFile()
+                        end
+                    end
+                end)
+            else
+                RunLoops:UnbindFromHeartbeat("AutoReport")
+            end
+        end
+    })
+
+    local GuiToggle = Utility:CreateToggle({
+        Name = "Gui",
+        CurrentValue = false,
+        Flag = "Gui",
+        SectionParent = Section,
+        Callback = function(callback)
+            ScreenGui.Enabled = callback
         end
     })
 end)
