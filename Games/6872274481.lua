@@ -2633,6 +2633,7 @@ runcode(function()
         Callback = function(callback)
             if callback then
                 RunLoops:BindToHeartbeat("AutoReport", function()
+	            task.wait(1)
                     for _, player in pairs(Players:GetPlayers()) do
                         if player ~= lplr and not Reported[player.UserId] then
                             bedwars.ReportPlayer:FireServer({player.UserId})
