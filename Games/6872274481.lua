@@ -1,3 +1,4 @@
+
 repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local lplr = Players.LocalPlayer
@@ -239,13 +240,10 @@ local function SpeedMultiplier(flight)
         funny = true
     end
 
-    if flight then
-        multiplier = multiplier + 0.97
-        funny = true
-    end
-
     if funny then
         baseMultiplier = baseMultiplier + (multiplier - 1) * 0.985
+    elseif flight then
+        baseMultiplier = 0.93
     else
         baseMultiplier = 0.985
     end
@@ -848,7 +846,7 @@ runcode(function()
                     
                     UpdateSecondLeft(remainingTime)
                     
-                    local speedMultiplier = SpeedMultiplier(true) -- Use SpeedMultiplier function
+                    local speedMultiplier = SpeedMultiplier()
                     
                     local flySpeed = FlightSpeedSlider.Value * speedMultiplier
                     local flyVelocity = humanoid.MoveDirection * flySpeed
@@ -870,15 +868,15 @@ runcode(function()
                     if humanoidRootPart then
                         humanoidRootPart.Velocity = flyVelocity + Vector3.new(0, verticalVelocity, 0)
                         local playerMass = humanoidRootPart:GetMass()
-                        local gravityForce = playerMass * Workspace.Gravity
+                        local gravityForce = playerMass * workspace.Gravity
                         local counteractingForce = -gravityForce * deltaTime
                         humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, counteractingForce, 0)
                     end
     
-                    if airTimer > 2.26 then
+                    if airTimer > 2.3 then
                         local ray = Ray.new(humanoidRootPart.Position, Vector3.new(0, -1000, 0))
                         local ignoreList = {lplr, character}
-                        local hitPart, hitPosition = Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
+                        local hitPart, hitPosition = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
                         if hitPart then
                             local originalPosition = humanoidRootPart.Position
                             humanoidRootPart.CFrame = CFrame.new(originalPosition.X, hitPosition.Y + 0, originalPosition.Z)
@@ -910,7 +908,7 @@ runcode(function()
         Range = {1, 23},
         Increment = 0.1,
         Suffix = "Speed",
-        CurrentValue = 15,
+        CurrentValue = 23,
         Flag = "FlightSpeedSlider",
         SectionParent = Section,
         Callback = function(Value)
@@ -941,6 +939,8 @@ runcode(function()
     })
     TweenFrame.Visible = true
 end)
+
+
 
 local LongJumpToggle
 local ClickTP
@@ -2560,22 +2560,32 @@ runcode(function()
         TextXAlignment = Enum.TextXAlignment.Left;
     })
 
+    local HttpService = game:GetService("HttpService")
+    local Players = game:GetService("Players")
+    local UserInputService = game:GetService("UserInputService")
+
     local function loadReportsFromFile()
         if isfile("reports.txt") then
             local file = readfile("reports.txt")
-            ReportedCount = game.HttpService:JSONDecode(file).Count or 0
+            local data = HttpService:JSONDecode(file)
+            ReportedCount = data.Count or 0
+            Reported = data.Reported or {}
             ReportedText.Text = " Reported: " .. ReportedCount
         end
     end
 
     local function saveReportsToFile()
-        writefile("reports.txt", game.HttpService:JSONEncode({ Count = ReportedCount }))
+        local data = {
+            Count = ReportedCount,
+            Reported = Reported
+        }
+        writefile("reports.txt", HttpService:JSONEncode(data))
     end
 
     local function loadPositionFromFile()
         if isfile("report_position.txt") then
             local positionData = readfile("report_position.txt")
-            local position = game.HttpService:JSONDecode(positionData)
+            local position = HttpService:JSONDecode(positionData)
             Frame.Position = UDim2.new(position.ScaleX, position.OffsetX, position.ScaleY, position.OffsetY)
         end
     end
@@ -2588,7 +2598,7 @@ runcode(function()
             ScaleY = position.Y.Scale,
             OffsetY = position.Y.Offset
         }
-        writefile("report_position.txt", game.HttpService:JSONEncode(positionData))
+        writefile("report_position.txt", HttpService:JSONEncode(positionData))
     end
 
     loadReportsFromFile()
@@ -2618,13 +2628,14 @@ runcode(function()
         end
     end)
 
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
+    UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - mousePos
             Frame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
         end
     end)
 
+    local reportDebounce = false
     local AutoReport = Utility:CreateToggle({
         Name = "AutoReport",
         CurrentValue = false,
@@ -2633,16 +2644,19 @@ runcode(function()
         Callback = function(callback)
             if callback then
                 RunLoops:BindToHeartbeat("AutoReport", function()
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= lplr and not Reported[player.UserId] then
-			    task.wait(1)
-                            bedwars.ReportPlayer:FireServer({player.UserId})
-                            task.wait()
-                            Reported[player.UserId] = true
-                            ReportedCount = ReportedCount + 1
-                            ReportedText.Text = " Reported: " .. ReportedCount
-                            saveReportsToFile()
+                    if not reportDebounce then
+                        reportDebounce = true
+                        for _, player in pairs(Players:GetPlayers()) do
+                            if player ~= lplr and not Reported[player.UserId] then
+                                bedwars.ReportPlayer:FireServer({player.UserId})
+                                Reported[player.UserId] = true
+                                ReportedCount = ReportedCount + 1
+                                ReportedText.Text = " Reported: " .. ReportedCount
+                                saveReportsToFile()
+                                task.wait(1)
+                            end
                         end
+                        reportDebounce = false
                     end
                 end)
             else
@@ -2650,7 +2664,6 @@ runcode(function()
             end
         end
     })
-
     local GuiToggle = Utility:CreateToggle({
         Name = "Gui",
         CurrentValue = false,
