@@ -21,7 +21,6 @@ end
 
 function Utility.IsAlive(entity)
     if not entity then return false end
-
     local health = getHealth(entity)
     if health and health > 0 then return true end
 
@@ -48,7 +47,7 @@ function Utility.getNearestEntities(maxDist, findNearestHealthEntity, teamCheck)
                 local mag = (humanoidRootPart.Position - lplrHumanoidRootPart.Position).Magnitude
                 local health = getHealth(entity) or 1
 
-                if mag < maxDist and (not teamCheck or entity:GetAttribute("Team") ~= lplrTeam) then
+                if mag <= maxDist and (not teamCheck or entity:GetAttribute("Team") ~= lplrTeam) then
                     addEntityData(entity, mag, health)
                 end
             end
@@ -65,13 +64,15 @@ function Utility.getNearestEntities(maxDist, findNearestHealthEntity, teamCheck)
         processEntity(entity)
     end
 
-    table.sort(entities, function(a, b)
-        if findNearestHealthEntity then
-            return a.health < b.health
-        else
-            return a.distance < b.distance
-        end
-    end)
+    if #entities > 0 then
+        table.sort(entities, function(a, b)
+            if findNearestHealthEntity then
+                return a.health < b.health
+            else
+                return a.distance < b.distance
+            end
+        end)
+    end
 
     return entities
 end

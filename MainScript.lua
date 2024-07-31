@@ -10,6 +10,11 @@ local games = {
 local currentGame = games[game.PlaceId]
 shared.AristoisPlaceId = game.PlaceId
 
+local betterisfile = function(file)
+	local suc, res = pcall(function() return readfile(file) end)
+	return suc and res ~= nil
+end
+
 if currentGame == "BedWars" then 
     shared.AristoisPlaceId = 6872274481
 elseif currentGame == "lobby" then
@@ -20,7 +25,7 @@ assert(not shared.Executed, "Already Injected")
 shared.Executed = true
 
 local scriptPath = "Aristois/Games/" .. tostring(shared.AristoisPlaceId) .. ".lua"
-if not currentGame or not isfile(scriptPath) then
+if not currentGame or not betterisfile(scriptPath) then
     scriptPath = "Aristois/Universal.lua"
 end
 
