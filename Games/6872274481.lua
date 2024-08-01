@@ -1868,25 +1868,38 @@ runcode(function()
     local Section = Render:CreateSection("ViewModel", false)
     local Connection
     local Size = {["Value"] = 3}
-    
-    local function resetHandleSize()
-        for _, v in pairs(Camera.Viewmodel:GetChildren()) do
-            if v:FindFirstChild("Handle") then
-                pcall(function()
-                    v:FindFirstChild("Handle").Size = v:FindFirstChild("Handle").Size * Size["Value"]
-                end)
+
+    local function adjustModelSize(scale)
+        for _, model in ipairs(Camera.Viewmodel:GetChildren()) do
+            if model:IsA("Model") then
+                local modelCenter = Vector3.new(0, 0, 0)
+                local partCount = 0
+                for _, part in ipairs(model:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        modelCenter = modelCenter + part.Position
+                        partCount = partCount + 1
+                    end
+                end
+                if partCount > 0 then
+                    modelCenter = modelCenter / partCount
+                end
+                for _, part in ipairs(model:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        local localPosition = part.Position - modelCenter
+                        part.Size = part.Size * scale
+                        part.Position = modelCenter + localPosition * scale
+                    end
+                end
             end
         end
     end
+    
+    local function resetModelSize()
+        adjustModelSize(1 / Size["Value"])
+    end
 
-    local function updateHandleSize()
-        for _, v in pairs(Camera.Viewmodel:GetChildren()) do
-            if v:FindFirstChild("Handle") then
-                pcall(function()
-                    v:FindFirstChild("Handle").Size = v:FindFirstChild("Handle").Size / Size["Value"]
-                end)
-            end
-        end
+    local function updateModelSize()
+        adjustModelSize(Size["Value"])
     end
 
     local ViewModelToggle = Render:CreateToggle({
@@ -1896,14 +1909,14 @@ runcode(function()
         SectionParent = Section,
         Callback = function(callback)
             if callback then
-                updateHandleSize()
+                updateModelSize()
                 if Connection then
                     Connection:Disconnect()
                 end
                 Connection = Camera.Viewmodel.ChildAdded:Connect(function(v)
-                    if v:FindFirstChild("Handle") then
+                    if v:IsA("Model") then
                         pcall(function()
-                            v:FindFirstChild("Handle").Size = v:FindFirstChild("Handle").Size / Size["Value"]
+                            adjustModelSize(Size["Value"])
                         end)
                     end
                 end)
@@ -1911,7 +1924,7 @@ runcode(function()
                 if Connection then
                     Connection:Disconnect()
                 end
-                resetHandleSize()
+                resetModelSize()
             end
         end
     })
@@ -1925,13 +1938,12 @@ runcode(function()
         Flag = "swordSize",
         SectionParent = Section,
         Callback = function(Value)
-            resetHandleSize() 
+            resetModelSize() 
             Size["Value"] = Value
-            updateHandleSize() 
+            updateModelSize() 
         end
     })
 end)
-
 
 runcode(function()
     local Life = {["Value"] = 4}
