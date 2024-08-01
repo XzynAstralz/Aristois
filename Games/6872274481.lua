@@ -1778,8 +1778,7 @@ runcode(function()
     end
 
     RunService.RenderStepped:Connect(updateNameTags)
-
-    local NameTagsToggle = Render:CreateToggle({
+    newData.toggles.NameTags = Render:CreateToggle({
         Name = "NameTags",
         CurrentValue = false,
         Flag = "NameTags",
@@ -1832,7 +1831,7 @@ runcode(function()
             end
         end
     })
-    local DisplayNamesToggle = Render:CreateToggle({
+    newData.toggles.DisplayNamesToggle = Render:CreateToggle({
         Name = "DisplayNames",
         CurrentValue = false,
         Flag = "DisplayNames",
@@ -1842,7 +1841,7 @@ runcode(function()
             updateNameTags()
         end
     })
-    local NamesToggle = Render:CreateToggle({
+   newData.toggles.NamesToggle = Render:CreateToggle({
         Name = "Names",
         CurrentValue = false,
         Flag = "espnames",
@@ -1852,7 +1851,7 @@ runcode(function()
             updateNameTags()
         end
     })
-    local HealthToggle = Render:CreateToggle({
+    newData.toggles.HealthToggle = Render:CreateToggle({
         Name = "Health",
         CurrentValue = false,
         Flag = "esphealth",
@@ -1868,55 +1867,37 @@ runcode(function()
     local Section = Render:CreateSection("ViewModel", false)
     local Connection
     local Size = {["Value"] = 3}
-
-    local function adjustModelSize(scale)
-        for _, model in ipairs(Camera.Viewmodel:GetChildren()) do
-            if model:IsA("Model") then
-                local modelCenter = Vector3.new(0, 0, 0)
-                local partCount = 0
-                for _, part in ipairs(model:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        modelCenter = modelCenter + part.Position
-                        partCount = partCount + 1
-                    end
-                end
-                if partCount > 0 then
-                    modelCenter = modelCenter / partCount
-                end
-                for _, part in ipairs(model:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        local localPosition = part.Position - modelCenter
-                        part.Size = part.Size * scale
-                        part.Position = modelCenter + localPosition * scale
-                    end
-                end
+    
+    local function resetHandleSize()
+        for _, v in pairs(Camera.Viewmodel:GetChildren()) do
+            if v:FindFirstChild("Handle") then
+                v:FindFirstChild("Handle").Size = v:FindFirstChild("Handle").Size * Size["Value"]
             end
         end
     end
-    
-    local function resetModelSize()
-        adjustModelSize(1 / Size["Value"])
-    end
 
-    local function updateModelSize()
-        adjustModelSize(Size["Value"])
+    local function updateHandleSize()
+        for _, v in pairs(Camera.Viewmodel:GetChildren()) do
+            if v:FindFirstChild("Handle") then
+                v:FindFirstChild("Handle").Size = v:FindFirstChild("Handle").Size / Size["Value"]
+            end
+        end
     end
-
-    local ViewModelToggle = Render:CreateToggle({
+    newData.toggles.ViewModel = Render:CreateToggle({
         Name = "ViewModel",
         CurrentValue = false,
         Flag = "ViewModel",
         SectionParent = Section,
         Callback = function(callback)
             if callback then
-                updateModelSize()
+                updateHandleSize()
                 if Connection then
                     Connection:Disconnect()
                 end
                 Connection = Camera.Viewmodel.ChildAdded:Connect(function(v)
-                    if v:IsA("Model") then
+                    if v:FindFirstChild("Handle") then
                         pcall(function()
-                            adjustModelSize(Size["Value"])
+                            v:FindFirstChild("Handle").Size = v:FindFirstChild("Handle").Size / Size["Value"]
                         end)
                     end
                 end)
@@ -1924,11 +1905,10 @@ runcode(function()
                 if Connection then
                     Connection:Disconnect()
                 end
-                resetModelSize()
+                resetHandleSize()
             end
         end
     })
-
     newData.toggles.swordSize = Render:CreateSlider({
         Name = "swordSize",
         Range = {1, 10},
@@ -1938,9 +1918,9 @@ runcode(function()
         Flag = "swordSize",
         SectionParent = Section,
         Callback = function(Value)
-            resetModelSize() 
+            resetHandleSize() 
             Size["Value"] = Value
-            updateModelSize() 
+            updateHandleSize() 
         end
     })
 end)
