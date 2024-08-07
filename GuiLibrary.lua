@@ -90,15 +90,13 @@ local RayfieldLibrary = {
 	}
 }
 
-local a=Instance.new("Part")for b,c in pairs(getreg())do if type(c)=="table"and#c then if rawget(c,"__mode")=="kvs"then for d,e in pairs(c)do if e==a then getgenv().InstanceList=c;break end end end end end;local f={}function f.invalidate(g)if not InstanceList then return end;for b,c in pairs(InstanceList)do if c==g then InstanceList[b]=nil;return g end end end;if not cloneref then getgenv().cloneref=f.invalidate end
-
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local Players = cloneref(game:GetService("Players"))
 local CoreGui = cloneref(game:GetService("CoreGui"))
-local LocalPlayer = game:GetService('Players').LocalPlayer
+local LocalPlayer = Players.LocalPlayer
 local TextService = game:GetService("TextService") 
 
 local Rayfield = game:GetObjects("rbxassetid://11637506633")[1]
@@ -112,16 +110,31 @@ if game["Run Service"]:IsStudio() then
 end
 
 local ParentObject = function(Gui)
-    if get_hidden_gui or gethui then
-        local hiddenUI = get_hidden_gui or gethui
-        Gui.Parent = hiddenUI()
-    elseif (not is_sirhurt_closure) and (syn and syn.protect_gui) then
-        syn.protect_gui(Gui)
-        Gui.Parent = CoreGui
-    elseif CoreGui:FindFirstChild('RobloxGui') then
-        Gui.Parent = CoreGui.RobloxGui
-    else
-        Gui.Parent = Main
+    local hui
+
+    local success, _ = pcall(function()
+        local Path1 = game:FindFirstChildOfClass('CoreGui')
+        hui = Instance.new("Folder", Path1)
+        hui.Name = 'hidden_ui\0'
+    end)
+
+    if not success then
+        if LocalPlayer then
+            hui = Instance.new("Folder", lp:FindFirstChildOfClass("PlayerGui"))
+            hui.Name = 'hidden_ui\0'
+        else
+            local Players = game.Players
+            if #Players:GetChildren() == 0 then
+                repeat task.wait() until #Players:GetChildren() > 0
+            end
+            local random_player = Players:GetChildren()[math.random(1, #Players:GetChildren())]
+            hui = Instance.new("Folder", random_player:FindFirstChild("PlayerGui"))
+            hui.Name = 'hidden_ui\0'
+        end
+    end
+
+    if hui then
+        Gui.Parent = hui
     end
 end
 
