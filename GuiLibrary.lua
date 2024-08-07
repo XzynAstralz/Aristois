@@ -120,10 +120,9 @@ local ParentObject = function(Gui)
 
     if not success then
         if LocalPlayer then
-            hui = Instance.new("Folder", lp:FindFirstChildOfClass("PlayerGui"))
+            hui = Instance.new("Folder", LocalPlayer:FindFirstChildOfClass("PlayerGui"))
             hui.Name = 'hidden_ui\0'
         else
-            local Players = game.Players
             if #Players:GetChildren() == 0 then
                 repeat task.wait() until #Players:GetChildren() > 0
             end
