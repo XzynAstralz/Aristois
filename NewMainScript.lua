@@ -37,7 +37,8 @@ local AristoisUpdater = {
         "Librarys/Whitelist.lua",
         "Librarys/Utility.lua",
         "Games/11630038968.lua",
-        "Games/6872274481.lua"
+        "Games/6872274481.lua",
+        "Games/support.lua"
     },
     
     assetsToDownload = {
