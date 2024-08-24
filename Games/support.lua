@@ -142,7 +142,6 @@ function RunLoops:UnbindFromHeartbeat(name)
     UnbindFromLoop(self.HeartTable, name)
 end
 
-local Combat = Window:CreateTab("Combat", "17155691785")
 local Blatant = Window:CreateTab("Blatant", "17155691785")
 local Render = Window:CreateTab("Render", "17155691785")
 local Utility = Window:CreateTab("Utility", "17155691785")
