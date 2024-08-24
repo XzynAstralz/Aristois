@@ -1,3 +1,6 @@
+if identifyexecutor and ({identifyexecutor()})[1] == "Solara" then
+    return 
+end
 repeat task.wait() until game:IsLoaded()
 local Players = game:GetService("Players")
 local lplr = Players.LocalPlayer
