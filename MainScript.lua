@@ -24,12 +24,17 @@ end
 assert(not shared.Executed, "Already Injected")
 shared.Executed = true
 
-local scriptPath = "Aristois/Games/" .. tostring(shared.AristoisPlaceId) .. ".lua"
-if not currentGame or not betterisfile(scriptPath) then
-    scriptPath = "Aristois/Universal.lua"
-end
+local scriptPath
 
-loadstring(readfile(scriptPath))()
+if shared.AristoisPlaceId == 6872274481 and identifyexecutor and ({identifyexecutor()})[1] == "Solara" then
+    loadstring(readfile("Aristois/Games/support.lua"))()
+else
+    scriptPath = "Aristois/Games/" .. tostring(shared.AristoisPlaceId) .. ".lua"
+    if not currentGame or not betterisfile(scriptPath) then
+        scriptPath = "Aristois/Universal.lua"
+    end
+    loadstring(readfile(scriptPath))()
+end
 
 local ServerSwitchScript = [[
     loadstring(readfile("Aristois/MainScript.lua"))()
