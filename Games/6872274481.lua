@@ -498,7 +498,7 @@ runcode(function()
                     if root then
                         newData.Attacking = true
                         local distanceToEntity = (root.Position - lplr.Character.HumanoidRootPart.Position).magnitude
-                        if distanceToEntity <= Distance["Value"]  then
+                        if distanceToEntity <= Distance["Value"] then
                             local selfPos = lplr.Character.HumanoidRootPart.Position + ((distanceToEntity > 14.3 or newData.toggles.Reach.CurrentValue and distanceToEntity > 21) and (CFrame.lookAt(lplr.Character.HumanoidRootPart.Position, root.Position).LookVector * 4) or Vector3.new(0, 0, 0))
                             switchItem(sword.tool)
                             bedwars.SwordController.lastAttack = game:GetService("Workspace"):GetServerTimeNow() - 0.11
