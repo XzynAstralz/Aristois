@@ -724,7 +724,7 @@ runcode(function()
     })
     newData.toggles.SpeedSlider = Blatant:CreateSlider({
         Name = "Speed", 
-        Range = {1, 30},
+        Range = {1, 23},
         Increment = 0.1,
         Suffix = "Speed.",
         CurrentValue = 23,
