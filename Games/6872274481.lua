@@ -558,7 +558,7 @@ runcode(function()
     })
     newData.toggles.KillauraDistance = Blatant:CreateSlider({
         Name = "Distance",
-        Range = {1, 26},
+        Range = {1, 21},
         Increment = 1,
         Suffix = "blocks",
         CurrentValue = 26,
