@@ -1024,7 +1024,7 @@ runcode(function()
                 else
                     lplr.Character.HumanoidRootPart.Velocity = Vector3.new(0, -1, 0)
                 end
-                createNotification("Fly Teleport", "Teleported up", 2.5, 4483362458)
+                createNotification("Fly Teleport", "Teleported Down", 2.5, 4483362458)
             end
         end
     })
