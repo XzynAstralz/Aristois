@@ -390,7 +390,7 @@ runcode(function()
 end)
 
 local nearestEntities = {}
-local Distance = {["Value"] = 22}
+local Distance = {["Value"] = 26}
 runcode(function()
     local Section = Blatant:CreateSection("Killaura", false)
     local FacePlayerEnabled = {Enabled = false}
@@ -558,10 +558,10 @@ runcode(function()
     })
     newData.toggles.KillauraDistance = Blatant:CreateSlider({
         Name = "Distance",
-        Range = {1, 21},
+        Range = {1, 26},
         Increment = 1,
         Suffix = "blocks",
-        CurrentValue = 21,
+        CurrentValue = 26,
         Flag = "KillAuraDistanceSlider",
         SectionParent = Section,
         Callback = function(Value)
