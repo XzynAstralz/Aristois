@@ -16,111 +16,83 @@ end
 
 local AristoisUpdater = {
     requestfunc = syn and syn.request or http and http.request or http_request or fluxus and fluxus.request or request or function() end,
-    
+
     betterisfile = function(file)
         local suc, res = pcall(readfile, file)
         return suc and res ~= nil
     end,
-    
-    foldersToCreate = {
-        "Aristois",
-        "Aristois/Games",
-        "Aristois/Librarys",
-        "Aristois/assets"
-    },
-    
-    filesToUpdate = {
-        "NewMainScript.lua",
-        "MainScript.lua",
-        "GuiLibrary.lua",
-        "Universal.lua",
-        "Librarys/Whitelist.lua",
-        "Librarys/Utility.lua",
-        "Games/11630038968.lua",
-        "Games/6872274481.lua",
-        "Games/support.lua"
-    },
-    
-    assetsToDownload = {
-        {
-            url = "https://github.com/XzynAstralz/Aristois/raw/main/assets/cape.png",
-            filePath = "Aristois/assets/cape.png"
-        }
-    },
-    
+
     updateFiles = function(self, commitHash)
         local baseUrl = "https://raw.githubusercontent.com/XzynAstralz/Aristois/" .. commitHash .. "/"
-        local threads = {}
-        
-        for _, filePath in ipairs(self.filesToUpdate) do
+
+        local filesToUpdate = {
+            "NewMainScript.lua",
+            "MainScript.lua",
+            "GuiLibrary.lua",
+            "Universal.lua",
+            "Librarys/Whitelist.lua",
+            "Librarys/Utility.lua",
+            "Games/11630038968.lua",
+            "Games/6872274481.lua",
+            "Games/support.lua"
+        }
+
+        for _, filePath in ipairs(filesToUpdate) do
             local localFilePath = "Aristois/" .. filePath
-            if not self.betterisfile(filePath) or self.updateAvailable(commitHash) then
+            if not self.betterisfile(filePath) or self:updateAvailable(commitHash) then
                 if self.betterisfile(filePath) then
                     delfile(filePath)
                 end
-                local fileUrl = baseUrl .. filePath
-                table.insert(threads, coroutine.create(function()
-                    downloadFileAsync(fileUrl, localFilePath)
-                end))
+                downloadFileAsync(baseUrl .. filePath, localFilePath)
             end
         end
-        
-        for _, thread in ipairs(threads) do
-            coroutine.resume(thread)
-        end
-        
-        for _, thread in ipairs(threads) do
-            while coroutine.status(thread) ~= "dead" do
-                wait()
-            end
-        end
-        
+
         local allFilesDownloaded = true
-        for _, filePath in ipairs(self.filesToUpdate) do
-            local localFilePath = "Aristois/" .. filePath
-            if not self.betterisfile(localFilePath) then
+        for _, filePath in ipairs(filesToUpdate) do
+            if not self.betterisfile("Aristois/" .. filePath) then
                 allFilesDownloaded = false
                 break
             end
         end
-        if allFilesDownloaded then
-            local mainScriptPath = "Aristois/MainScript.lua"
-            if self.betterisfile(mainScriptPath) then
-                loadstring(readfile(mainScriptPath))()
-            end
+
+        if allFilesDownloaded and self.betterisfile("Aristois/MainScript.lua") then
+            loadstring(readfile("Aristois/MainScript.lua"))()
         end
-        
+
         writefile("Aristois/commithash.txt", commitHash)
     end,
-    
+
     updateAvailable = function(self, latestCommitHash)
         if self.betterisfile("Aristois/commithash.txt") then
-            local storedHash = readfile("Aristois/commithash.txt")
-            return storedHash ~= latestCommitHash
+            return readfile("Aristois/commithash.txt") ~= latestCommitHash
         end
         return true
     end,
-    
+
     downloadIfNotExists = function(self, url, filePath)
         if not self.betterisfile(filePath) then
-            local req = self.requestfunc({
-                Url = url,
-                Method = "GET"
-            })
-            writefile(filePath, req.Body)
+            writefile(filePath, self.requestfunc({ Url = url, Method = "GET" }).Body)
         end
     end,
 }
 
-for _, folder in ipairs(AristoisUpdater.foldersToCreate) do
+local foldersToCreate = {
+    "Aristois",
+    "Aristois/Games",
+    "Aristois/Librarys",
+    "Aristois/assets"
+}
+
+for _, folder in ipairs(foldersToCreate) do
     if not isfolder(folder) then
         makefolder(folder)
     end
 end
 
-for _, asset in ipairs(AristoisUpdater.assetsToDownload) do
-    AristoisUpdater:downloadIfNotExists(asset.url, asset.filePath)
-end
+AristoisUpdater:downloadIfNotExists(
+    "https://github.com/XzynAstralz/Aristois/raw/main/assets/cape.png", 
+    "Aristois/assets/cape.png"
+)
 
 local latestCommit = fetchLatestCommit()
 if latestCommit then
