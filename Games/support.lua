@@ -105,45 +105,41 @@ local Window = GuiLibrary:CreateWindow({
     }
  })
 
-do
-    function RunLoops:BindToRenderStep(name, func)
-        if RunLoops.RenderStepTable[name] == nil then
-            RunLoops.RenderStepTable[name] = RunService.RenderStepped:Connect(func)
-        end
+ local function BindToLoop(loopTable, loopEvent, name, func)
+    if loopTable[name] == nil then
+        loopTable[name] = loopEvent:Connect(func)
     end
+end
 
-    function RunLoops:UnbindFromRenderStep(name)
-        if RunLoops.RenderStepTable[name] then
-            RunLoops.RenderStepTable[name]:Disconnect()
-            RunLoops.RenderStepTable[name] = nil
-        end
+local function UnbindFromLoop(loopTable, name)
+    if loopTable[name] then
+        loopTable[name]:Disconnect()
+        loopTable[name] = nil
     end
+end
 
-    function RunLoops:BindToStepped(name, func)
-        if RunLoops.StepTable[name] == nil then
-            RunLoops.StepTable[name] = RunService.Stepped:Connect(func)
-        end
-    end
+function RunLoops:BindToRenderStep(name, func)
+    BindToLoop(self.RenderStepTable, RunService.RenderStepped, name, func)
+end
 
-    function RunLoops:UnbindFromStepped(name)
-        if RunLoops.StepTable[name] then
-            RunLoops.StepTable[name]:Disconnect()
-            RunLoops.StepTable[name] = nil
-        end
-    end
+function RunLoops:UnbindFromRenderStep(name)
+    UnbindFromLoop(self.RenderStepTable, name)
+end
 
-    function RunLoops:BindToHeartbeat(name, func)
-        if RunLoops.HeartTable[name] == nil then
-            RunLoops.HeartTable[name] = RunService.Heartbeat:Connect(func)
-        end
-    end
+function RunLoops:BindToStepped(name, func)
+    BindToLoop(self.StepTable, RunService.Stepped, name, func)
+end
 
-    function RunLoops:UnbindFromHeartbeat(name)
-        if RunLoops.HeartTable[name] then
-            RunLoops.HeartTable[name]:Disconnect()
-            RunLoops.HeartTable[name] = nil
-        end
-    end
+function RunLoops:UnbindFromStepped(name)
+    UnbindFromLoop(self.StepTable, name)
+end
+
+function RunLoops:BindToHeartbeat(name, func)
+    BindToLoop(self.HeartTable, RunService.Heartbeat, name, func)
+end
+
+function RunLoops:UnbindFromHeartbeat(name)
+    UnbindFromLoop(self.HeartTable, name)
 end
 
 local Combat = Window:CreateTab("Combat", "17155691785")
