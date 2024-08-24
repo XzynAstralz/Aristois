@@ -1015,11 +1015,14 @@ runcode(function()
                 local FlyDuration = tick() - FlyStartTime
                 if FlyDuration > MaxFlyDuration then
                     lplr.Character.HumanoidRootPart.Velocity = Vector3.new(0, -1, 0)
+                    task.wait(0.3)
                     local bodyVel = Instance.new("BodyVelocity", lplr.Character.HumanoidRootPart)
                     bodyVel.Velocity = Vector3.new(0, -1, 0)
-                    bodyVel.MaxForce = Vector3.new(0, math.huge, 0)
+                    bodyVel.MaxForce = Vector3.new(0, 9e9, 0)
                     task.wait(1.2)
                     bodyVel:Destroy()
+                else
+                    lplr.Character.HumanoidRootPart.Velocity = Vector3.new(0, -1, 0)
                 end
                 createNotification("Fly Teleport", "Teleported up", 2.5, 4483362458)
             end
