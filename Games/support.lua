@@ -2520,3 +2520,4 @@ end)
 
 WhitelistModule.UpdateTags()
 GuiLibrary:LoadConfiguration()
+print("Loaded Solara Support")
