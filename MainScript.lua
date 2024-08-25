@@ -40,3 +40,4 @@ game.Players.LocalPlayer.OnTeleport:Connect(function(State)
         queueonteleport(ServerSwitchScript)
     end
 end)
+print("MainScript Loaded")
