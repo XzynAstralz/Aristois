@@ -159,11 +159,12 @@ local bedwars = setmetatable({
     ReportPlayer = ReplicatedStorage.rbxts_include.node_modules["@rbxts"].net.out._NetManaged.ReportPlayer,
     GroundHit = ReplicatedStorage.rbxts_include.node_modules["@rbxts"].net.out._NetManaged.GroundHit,
     inventory = nil,
-    inventoryFolder = nil
+    inventoryFolder = nil,
+    connection = nil
 }, newData.BedWarsMeta)
 
 
-connection = RunService.Heartbeat:Connect(function()
+bedwars.connection = RunService.Heartbeat:Connect(function()
     if PlayerUtility.IsAlive(lplr) and lplr.Character:FindFirstChild("InventoryFolder") then
         bedwars.inventory = lplr.Character:FindFirstChild("InventoryFolder").Value
     end
@@ -352,6 +353,7 @@ runcode(function()
             activeAdornments = {}
         end
     end
+
     local origC0 = ReplicatedStorage.Assets.Viewmodel.RightHand.RightWrist.C0
     newData.toggles.Killaura = Blatant:CreateToggle({
         Name = "Killaura",
@@ -739,7 +741,7 @@ runcode(function()
                         humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, counteractingForce, 0)
                     end
                     
-                    if airTimer > 2.35 then
+                    if airTimer > 2.3 then
                         workspace.Gravity = originalGravity
                         local ray = Ray.new(humanoidRootPart.Position, Vector3.new(0, -1000, 0))
                         local ignoreList = {lplr, character}
@@ -1022,14 +1024,12 @@ end)
 
 runcode(function()
     local Section = Blatant:CreateSection("Nofall", false)
-    local NofallToggle = Blatant:CreateToggle({
+    newData.toggles.Nofall = Blatant:CreateToggle({
         Name = "Nofall",
         CurrentValue = false,
         Flag = "Nofall",
         SectionParent = Section,
         Callback = function(callback)
-            local Fall = false
-            local Client
             if callback then
                 repeat
                     task.wait(0.5)
@@ -1708,7 +1708,9 @@ end)
 runcode(function()
     local Section = Utility:CreateSection("AnticheatBypass", false)
     local Notification = {Enabled = false}
-    local speedcheck
+    local speedcheck, pingSpikeCheck
+    local lastPing = nil
+
     newData.toggles.AnticheatBypass = Utility:CreateToggle({
         Name = "AnticheatBypass",
         CurrentValue = false,
@@ -1724,9 +1726,21 @@ runcode(function()
                         end
                     end
                 end)
+                pingSpikeCheck = game:GetService("RunService").Heartbeat:Connect(function()
+                    local currentPing = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+                    if lastPing and currentPing > lastPing * 1.5 then
+                        if Notification.Enabled then
+                            createNotification("AnticheatBypass", "Ping spike detected! Previous ping: " .. lastPing .. " ms, New ping: " .. currentPing .. " ms", 5.5, 4483362458)
+                        end
+                    end
+                    lastPing = currentPing
+                end)
             else
                 if speedcheck then
                     speedcheck:Disconnect()
+                end
+                if pingSpikeCheck then
+                    pingSpikeCheck:Disconnect()
                 end
             end
         end
@@ -2139,9 +2153,6 @@ end)
 runcode(function()
     local Section = Utility:CreateSection("AutoHeal", false)
     local HealTeam = {Enabled = false}
-    local oldAnimTypes = {}
-    local oldSoundList = {}
-
     newData.toggles.AutoHeal = Utility:CreateToggle({
         Name = "AutoHeal",
         CurrentValue = false,
