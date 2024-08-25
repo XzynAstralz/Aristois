@@ -10,11 +10,6 @@ local games = {
 local currentGame = games[game.PlaceId]
 shared.AristoisPlaceId = game.PlaceId
 
-local betterisfile = function(file)
-	local suc, res = pcall(function() return readfile(file) end)
-	return suc and res ~= nil
-end
-
 if currentGame == "BedWars" then 
     shared.AristoisPlaceId = 6872274481
 elseif currentGame == "lobby" then
@@ -27,17 +22,17 @@ shared.Executed = true
 local scriptPath
 
 if shared.AristoisPlaceId == 6872274481 and identifyexecutor and ({identifyexecutor()})[1] == "Solara" then
-    loadstring(readfile("Aristois/Games/support.lua"))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Games/support.lua"))()
 else
     scriptPath = "Aristois/Games/" .. tostring(shared.AristoisPlaceId) .. ".lua"
-    if not currentGame or not betterisfile(scriptPath) then
+    if not currentGame or not pcall(function() game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/" .. scriptPath) end) then
         scriptPath = "Aristois/Universal.lua"
     end
-    loadstring(readfile(scriptPath))()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/" .. scriptPath))()
 end
 
 local ServerSwitchScript = [[
-    loadstring(readfile("Aristois/MainScript.lua"))()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/NewMainScript.lua'))()
 ]]
 
 game.Players.LocalPlayer.OnTeleport:Connect(function(State)
