@@ -1807,10 +1807,7 @@ runcode(function()
         Callback = function(callback)
             if callback then
                 speedcheck = lplr:GetAttributeChangedSignal("LastTeleported"):Connect(function()
-                    local lastTeleported = lplr:GetAttribute("LastTeleported")
-                    local spawnTime = lplr:GetAttribute("SpawnTime")
-                    
-                    if lastTeleported > 1 and spawnTime - lastTeleported > 0 and not newData.toggles.InfiniteFly.CurrentValue then
+                    if lplr:GetAttribute("LastTeleported") > 1 and not newData.toggles.InfiniteFly.CurrentValue then
                         slowdowntick = tick() + 3
                         if Notification.Enabled then
                             createNotification("AnticheatBypass", "Slowing down speed flag check", 3.5, 4483362458)
@@ -1819,13 +1816,11 @@ runcode(function()
                 end)
                 pingSpikeCheck = game:GetService("RunService").Heartbeat:Connect(function()
                     local currentPing = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
-
                     if lastPing and currentPing > lastPing * 1.5 then
                         if Notification.Enabled then
                             createNotification("AnticheatBypass", "Ping spike detected! Previous ping: " .. lastPing .. " ms, New ping: " .. currentPing .. " ms", 5.5, 4483362458)
                         end
                     end
-
                     lastPing = currentPing
                 end)
             else
