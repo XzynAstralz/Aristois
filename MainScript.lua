@@ -26,10 +26,16 @@ end
 
 loadstring(game:HttpGet(scriptPath))()
 
+local ServerSwitchScript = [[
+    if shared.dev then
+        print("waza")
+    else
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/MainScript.lua'))()
+    end
+]]
+
 game.Players.LocalPlayer.OnTeleport:Connect(function(State)
     if State and queueonteleport then
-        queueonteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/NewMainScript.lua'))()")
+        queueonteleport(ServerSwitchScript)
     end
 end)
-
-print(shared.WhitelistFile)
