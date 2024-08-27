@@ -2526,9 +2526,9 @@ if not whitelist.connection then
 end
 
 Players.PlayerAdded:Connect(function(player)
-    WhitelistModule.UpdateTags()
+    --WhitelistModule.UpdateTags()
 end)
 
-WhitelistModule.UpdateTags()
+--WhitelistModule.UpdateTags()
 GuiLibrary:LoadConfiguration()
 print("Loaded Solara Support")
