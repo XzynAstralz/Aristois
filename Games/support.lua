@@ -741,7 +741,7 @@ runcode(function()
                         humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, counteractingForce, 0)
                     end
                     
-                    if airTimer > 2.3 then
+                    if airTimer > 2.28 then
                         workspace.Gravity = originalGravity
                         local ray = Ray.new(humanoidRootPart.Position, Vector3.new(0, -1000, 0))
                         local ignoreList = {lplr, character}
