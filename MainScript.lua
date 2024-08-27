@@ -1,4 +1,4 @@
-local queueonteleport = (syn and syn.queue_on_teleport) or queue_for_teleport or queue_on_teleport or queueonteleport
+local queueonteleport = syn and syn.queue_on_teleport or queue_for_teleport or queue_on_teleport or queueonteleport
 
 local games = {
     [6872274481] = "BedWars",
@@ -7,37 +7,29 @@ local games = {
     [6872265039] = "lobby"
 }
 
-local currentGame = games[game.PlaceId]
 shared.AristoisPlaceId = game.PlaceId
 
-if currentGame == "BedWars" then 
+if games[game.PlaceId] == "BedWars" then
     shared.AristoisPlaceId = 6872274481
-elseif currentGame == "lobby" then
+elseif games[game.PlaceId] == "lobby" then
     shared.AristoisPlaceId = 6872265039
 end
 
 assert(not shared.Executed, "Already Injected")
 shared.Executed = true
 
-local scriptPath
+local scriptPath = shared.AristoisPlaceId == 6872274481 and identifyexecutor and ({identifyexecutor()})[1] == "Solara" and "https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Games/support.lua" or ("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Aristois/Games/" .. tostring(shared.AristoisPlaceId) .. ".lua")
 
-if shared.AristoisPlaceId == 6872274481 and identifyexecutor and ({identifyexecutor()})[1] == "Solara" then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Games/support.lua"))()
-else
-    scriptPath = "Aristois/Games/" .. tostring(shared.AristoisPlaceId) .. ".lua"
-    if not currentGame or not pcall(function() game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/" .. scriptPath) end) then
-        scriptPath = "Aristois/Universal.lua"
-    end
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/" .. scriptPath))()
+if not games[game.PlaceId] or not pcall(function() game:HttpGet(scriptPath) end) then
+    scriptPath = "https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Aristois/Universal.lua"
 end
 
-local ServerSwitchScript = [[
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/NewMainScript.lua'))()
-]]
+loadstring(game:HttpGet(scriptPath))()
 
 game.Players.LocalPlayer.OnTeleport:Connect(function(State)
     if State and queueonteleport then
-        queueonteleport(ServerSwitchScript)
+        queueonteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/NewMainScript.lua'))()")
     end
 end)
-print("MainScript Loaded")
+
+print(shared.WhitelistFile)
