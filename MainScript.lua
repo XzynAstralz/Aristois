@@ -1,4 +1,4 @@
-local queueonteleport = syn and syn.queue_on_teleport or queue_for_teleport or queue_on_teleport or queueonteleport
+local queueonteleport = (syn and syn.queue_on_teleport) or queue_for_teleport or queue_on_teleport or queueonteleport
 
 local games = {
     [6872274481] = "BedWars",
@@ -7,16 +7,19 @@ local games = {
     [6872265039] = "lobby"
 }
 
-shared.AristoisPlaceId = game.PlaceId
 local currentGame = games[game.PlaceId]
-if games[game.PlaceId] == "BedWars" then
+shared.AristoisPlaceId = game.PlaceId
+
+if currentGame == "BedWars" then 
     shared.AristoisPlaceId = 6872274481
-elseif games[game.PlaceId] == "lobby" then
+elseif currentGame == "lobby" then
     shared.AristoisPlaceId = 6872265039
 end
 
 assert(not shared.Executed, "Already Injected")
 shared.Executed = true
+
+local scriptPath
 
 if shared.AristoisPlaceId == 6872274481 and identifyexecutor and ({identifyexecutor()})[1] == "Solara" then
     loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Games/support.lua"))()
@@ -32,7 +35,7 @@ local ServerSwitchScript = [[
     if shared.dev then
         print("waza")
     else
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/MainScript.lua'))()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/OldMainScript.lua'))()
     end
 ]]
 
@@ -41,3 +44,5 @@ game.Players.LocalPlayer.OnTeleport:Connect(function(State)
         queueonteleport(ServerSwitchScript)
     end
 end)
+
+print("MainScript Loaded")
