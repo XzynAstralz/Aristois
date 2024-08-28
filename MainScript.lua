@@ -35,7 +35,7 @@ local ServerSwitchScript = [[
     if shared.dev then
         print("waza")
     else
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/OldMainScript.lua'))()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/MainScript.lua'))()
     end
 ]]
 
