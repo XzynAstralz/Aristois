@@ -8,7 +8,7 @@ local games = {
 }
 
 shared.AristoisPlaceId = game.PlaceId
-
+local currentGame = games[game.PlaceId]
 if games[game.PlaceId] == "BedWars" then
     shared.AristoisPlaceId = 6872274481
 elseif games[game.PlaceId] == "lobby" then
@@ -18,13 +18,15 @@ end
 assert(not shared.Executed, "Already Injected")
 shared.Executed = true
 
-local scriptPath = shared.AristoisPlaceId == 6872274481 and identifyexecutor and ({identifyexecutor()})[1] == "Solara" and "https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Games/support.lua" or ("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Aristois/Games/" .. tostring(shared.AristoisPlaceId) .. ".lua")
-
-if not games[game.PlaceId] or not pcall(function() game:HttpGet(scriptPath) end) then
-    scriptPath = "https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Aristois/Universal.lua"
+if shared.AristoisPlaceId == 6872274481 and identifyexecutor and ({identifyexecutor()})[1] == "Solara" then
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Games/support.lua"))()
+else
+    scriptPath = "Aristois/Games/" .. tostring(shared.AristoisPlaceId) .. ".lua"
+    if not currentGame or not pcall(function() game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/" .. scriptPath) end) then
+        scriptPath = "Aristois/Universal.lua"
+    end
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/" .. scriptPath))()
 end
-
-loadstring(game:HttpGet(scriptPath))()
 
 local ServerSwitchScript = [[
     if shared.dev then
