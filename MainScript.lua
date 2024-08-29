@@ -1,4 +1,4 @@
-local queueonteleport = (syn and syn.queue_on_teleport) or queue_for_teleport or queue_on_teleport or queueonteleport
+local queueonteleport = queue_for_teleport or queue_on_teleport or queueonteleport
 
 local games = {
     [6872274481] = "BedWars",
