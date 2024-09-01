@@ -110,31 +110,7 @@ if game["Run Service"]:IsStudio() then
 end
 
 local ParentObject = function(Gui)
-    local hui
-
-    local success, _ = pcall(function()
-        local Path1 = game:FindFirstChildOfClass('CoreGui')
-        hui = Instance.new("Folder", Path1)
-        hui.Name = 'hidden_ui\0'
-    end)
-
-    if not success then
-        if LocalPlayer then
-            hui = Instance.new("Folder", LocalPlayer:FindFirstChildOfClass("PlayerGui"))
-            hui.Name = 'hidden_ui\0'
-        else
-            if #Players:GetChildren() == 0 then
-                repeat task.wait() until #Players:GetChildren() > 0
-            end
-            local random_player = Players:GetChildren()[math.random(1, #Players:GetChildren())]
-            hui = Instance.new("Folder", random_player:FindFirstChild("PlayerGui"))
-            hui.Name = 'hidden_ui\0'
-        end
-    end
-
-    if hui then
-        Gui.Parent = hui
-    end
+    Gui.Parent = CoreGui
 end
 
 ParentObject(Rayfield)
