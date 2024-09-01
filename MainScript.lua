@@ -1,48 +1,65 @@
-local queueonteleport = queue_for_teleport or queue_on_teleport or queueonteleport
+local request = syn and syn.request or http and http.request or http_request or request
+local lplr = game:GetService("Players").LocalPlayer
 
-local games = {
-    [6872274481] = "BedWars",
-    [8444591321] = "BedWars",
-    [8560631822] = "BedWars",
-    [6872265039] = "lobby"
+local Aristois = {
+    PlaceId = game.PlaceId,
+    queueonteleport = queue_for_teleport or queue_on_teleport or queueonteleport,
+    Paths = {
+        SupportScript = "https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Games/support.lua",
+        UniversalScript = "https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Aristois/Universal.lua",
+        BaseUrl = "https://raw.githubusercontent.com/XzynAstralz/Aristois/main/"
+    },
+    ExecutorCheck = identifyexecutor and ({identifyexecutor()})[1] == "Solara",
 }
-
-local currentGame = games[game.PlaceId]
-shared.AristoisPlaceId = game.PlaceId
-
-if currentGame == "BedWars" then 
-    shared.AristoisPlaceId = 6872274481
-elseif currentGame == "lobby" then
-    shared.AristoisPlaceId = 6872265039
-end
 
 assert(not shared.Executed, "Already Injected")
 shared.Executed = true
 
 local scriptPath
+local success, errorMessage
 
-if shared.AristoisPlaceId == 6872274481 and identifyexecutor and ({identifyexecutor()})[1] == "Solara" then
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Games/support.lua"))()
-else
-    scriptPath = "Aristois/Games/" .. tostring(shared.AristoisPlaceId) .. ".lua"
-    if not currentGame or not pcall(function() game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/" .. scriptPath) end) then
-        scriptPath = "Aristois/Universal.lua"
-    end
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/" .. scriptPath))()
-end
-
-local ServerSwitchScript = [[
-    if shared.dev then
-        print("waza")
+success, errorMessage = pcall(function()
+    if Aristois.PlaceId == 6872274481 or Aristois.PlaceId == 8444591321 or Aristois.PlaceId == 8560631822 then
+        Aristois.PlaceId = 6872274481
+        if Aristois.ExecutorCheck then
+            loadstring(game:HttpGet(Aristois.Paths.SupportScript))()
+        else
+            scriptPath = "Aristois/Games/" .. tostring(Aristois.PlaceId) .. ".lua"
+        end
+    elseif Aristois.PlaceId == 6872265039 then
+        Aristois.PlaceId = 6872265039
+        scriptPath = "Aristois/Games/" .. tostring(Aristois.PlaceId) .. ".lua"
     else
-        loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/MainScript.lua'))()
-    end
-]]
-
-game.Players.LocalPlayer.OnTeleport:Connect(function(State)
-    if State and queueonteleport then
-        queueonteleport(ServerSwitchScript)
+        scriptPath = "Aristois/Universal.lua"
     end
 end)
 
-print("MainScript Loaded")
+if scriptPath then
+    loadstring(game:HttpGet(Aristois.Paths.BaseUrl .. scriptPath))()
+end
+
+local ServerSwitchScript = [[
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/MainScript.lua'))()
+]]
+
+lplr.OnTeleport:Connect(function(State)
+    if State and Aristois.queueonteleport then
+        Aristois.queueonteleport(ServerSwitchScript)
+    end
+end)
+
+if not success then
+    request({
+        Url = 'http://127.0.0.1:6463/rpc?v=1',
+        Method = 'POST',
+        Headers = {
+            ['Content-Type'] = 'application/json',
+            Origin = 'https://discord.com'
+        },
+        Body = game:GetService("HttpService"):JSONEncode({
+            cmd = 'INVITE_BROWSER',
+            nonce = game:GetService("HttpService"):GenerateGUID(false),
+            args = { code = "pvVKJNqZsS" }
+        })
+    })
+end
