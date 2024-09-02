@@ -1044,43 +1044,32 @@ runcode(function()
     local TeleportEnabled = false
     local FlyRoot
     local FlyStartTime
-    local RootWeld
-    local ogC0
+    local clone
 
     local function TextBoxFocused()
         return UserInputService:GetFocusedTextBox() ~= nil
     end
 
     local function setupFly()
-        FlyRoot = lplr.Character.HumanoidRootPart:Clone()
+        lplr.Character.Archivable = true
+        clone = lplr.Character:Clone()
+        FlyRoot = clone.PrimaryPart
         FlyRoot.Anchored = true
         FlyRoot.CanCollide = true
-        FlyRoot:ClearAllChildren()
-
-        FlyRoot.Parent = workspace
-
-        RootWeld = lplr.Character.LowerTorso.Root
-        RootWeld.Part0 = FlyRoot
-        ogC0 = RootWeld.C0
-        RootWeld.C0 = ogC0 * CFrame.new(0, -(lplr.Character.HumanoidRootPart.Size.Y / 1.5), 0)
-
-        Camera.CameraSubject = FlyRoot
+        clone.Parent = workspace
+        Camera.CameraSubject = clone
         Camera.CameraType = CameraTypes[1]
     end
-    
+
     local function clearFly()
         if FlyRoot then
-            FlyRoot:Destroy()
+            clone:Destroy()
             FlyRoot = nil
         end
-        if RootWeld and PlayerUtility.IsAlive(lplr) then
-            RootWeld.Part0 = lplr.Character.HumanoidRootPart
-            RootWeld.C0 = ogC0
-        end
-        
+
         TeleportEnabled = false
+        Camera.CameraSubject = lplr.Character
         Camera.CameraType = CameraTypes[1]
-        Camera.CameraSubject = lplr.Character or nil
     end
 
     newData.toggles.InfiniteFly = Blatant:CreateToggle({
@@ -1186,7 +1175,6 @@ runcode(function()
         end
     })
 end)
-
 
 runcode(function()
     local Section = Render:CreateSection("TargetHud", false)
