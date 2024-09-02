@@ -2511,4 +2511,4 @@ end
 
 --WhitelistModule.UpdateTags()
 GuiLibrary:LoadConfiguration()
-print("Loaded stars")
+print("Loaded but zeph got no braincell :scream:")
