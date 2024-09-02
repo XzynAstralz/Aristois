@@ -2511,4 +2511,4 @@ end
 
 --WhitelistModule.UpdateTags()
 GuiLibrary:LoadConfiguration()
-print("Loaded 6872274481")
+print("Loaded stars")
