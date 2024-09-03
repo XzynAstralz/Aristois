@@ -1031,43 +1031,32 @@ runcode(function()
     local TeleportEnabled = false
     local FlyRoot
     local FlyStartTime
-    local RootWeld
-    local ogC0
+    local clone
 
     local function TextBoxFocused()
         return UserInputService:GetFocusedTextBox() ~= nil
     end
 
     local function setupFly()
-        FlyRoot = lplr.Character.HumanoidRootPart:Clone()
+        lplr.Character.Archivable = true
+        clone = lplr.Character:Clone()
+        FlyRoot = clone.PrimaryPart
         FlyRoot.Anchored = true
         FlyRoot.CanCollide = true
-        FlyRoot:ClearAllChildren()
-
-        FlyRoot.Parent = workspace
-
-        RootWeld = lplr.Character.LowerTorso.Root
-        RootWeld.Part0 = FlyRoot
-        ogC0 = RootWeld.C0
-        RootWeld.C0 = ogC0 * CFrame.new(0, -(lplr.Character.HumanoidRootPart.Size.Y / 1.5), 0)
-
-        Camera.CameraSubject = FlyRoot
+        clone.Parent = workspace
+        Camera.CameraSubject = clone
         Camera.CameraType = CameraTypes[1]
     end
-    
+
     local function clearFly()
         if FlyRoot then
-            FlyRoot:Destroy()
+            clone:Destroy()
             FlyRoot = nil
         end
-        if RootWeld and PlayerUtility.IsAlive(lplr) then
-            RootWeld.Part0 = lplr.Character.HumanoidRootPart
-            RootWeld.C0 = ogC0
-        end
-        
+
         TeleportEnabled = false
+        Camera.CameraSubject = lplr.Character
         Camera.CameraType = CameraTypes[1]
-        Camera.CameraSubject = lplr.Character or nil
     end
 
     newData.toggles.InfiniteFly = Blatant:CreateToggle({
@@ -2376,112 +2365,6 @@ runcode(function()
         end
     })
 end)
-
-runcode(function()
-    local Section = Utility:CreateSection("Autowin", false)
-    local FlyRoot
-    local RootWeld
-    newData.toggles.Autowin = Utility:CreateToggle({
-        Name = "Autowin",
-        CurrentValue = false,
-        Flag = "Autowin",
-        SectionParent = Section,
-        Callback = function(callback)
-            if callback then
-                RunLoops:BindToHeartbeat("Autowin", function()
-                    local nearestBed
-                    local shortestDistance = math.huge
-                    
-                    for _, v in ipairs(game.Workspace:GetChildren()) do
-                        if v.Name:lower() == "bed" then
-                            local blanket = v:FindFirstChild("Blanket")
-                            if blanket and blanket:IsA("BasePart") then
-                                local teamColor = blanket.BrickColor
-                                if lplr.Team and lplr.Team.TeamColor ~= teamColor then
-                                    local hasPlayers = false
-                                    for _, player in ipairs(game.Players:GetPlayers()) do
-                                        if player.Team and player.Team.TeamColor == teamColor and player.Team.Name ~= "Spectators" then
-                                            hasPlayers = true
-                                            break
-                                        end
-                                    end
-                                    if hasPlayers then
-                                        local distance = (v.Position - lplr.Character.HumanoidRootPart.Position).Magnitude
-                                        if distance < shortestDistance then
-                                            nearestBed = v
-                                            shortestDistance = distance
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                    
-                    if nearestBed then
-                        -- Setup Fly
-                        FlyRoot = lplr.Character.HumanoidRootPart:Clone()
-                        FlyRoot.Anchored = true
-                        FlyRoot.CanCollide = true
-                        FlyRoot:ClearAllChildren()
-                        FlyRoot.Parent = workspace
-
-                        RootWeld = lplr.Character.LowerTorso.Root
-                        RootWeld.Part0 = FlyRoot
-                        ogC0 = RootWeld.C0
-                        RootWeld.C0 = ogC0 * CFrame.new(0, -(lplr.Character.HumanoidRootPart.Size.Y / 1.5), 0)
-
-                        Camera.CameraSubject = FlyRoot
-                        Camera.CameraType = CameraTypes[1]
-
-                        -- Fly to the bed
-                        local targetPos = nearestBed.Position + Vector3.new(0, 100, 0)
-                        local tweenInfo = TweenInfo.new((FlyRoot.Position - targetPos).Magnitude / 100, Enum.EasingStyle.Linear)
-                        local tween = game:GetService("TweenService"):Create(FlyRoot, tweenInfo, {CFrame = CFrame.new(targetPos)})
-                        tween:Play()
-                        tween.Completed:Wait()
-
-                        -- Raycast and teleport
-                        local RayParams = RaycastParams.new()
-                        RayParams.FilterType = Enum.RaycastFilterType.Exclude
-                        RayParams.FilterDescendantsInstances = {lplr.Character, workspace.CurrentCamera, FlyRoot}
-
-                        local RayStart = FlyRoot.Position + Vector3.new(0, -5, 0)
-                        local RayResult = workspace:Raycast(RayStart, RayStart - Vector3.new(0, 10000, 0), RayParams)
-
-                        local tpPos
-                        if RayResult then
-                            tpPos = CFrame.new(RayResult.Position) + Vector3.new(0, lplr.Character.HumanoidRootPart.Size.Y)
-                        else
-                            tpPos = FlyRoot.CFrame
-                        end
-                        
-                        local bodyVel = Instance.new("BodyVelocity", lplr.Character.HumanoidRootPart)
-                        bodyVel.Velocity = Vector3.new(0, lplr.Character.HumanoidRootPart:GetMass() * 2, 0)
-                        bodyVel.MaxForce = Vector3.new(0, math.huge)
-                        for _ = 1, 2 do
-                            lplr.Character.HumanoidRootPart.CFrame = tpPos
-                            task.wait(.1)
-                        end
-                        bodyVel:Destroy()
-
-                        -- Clear Fly
-                        FlyRoot:Destroy()
-                        FlyRoot = nil
-                        if RootWeld and PlayerUtility.IsAlive(lplr) then
-                            RootWeld.Part0 = lplr.Character.HumanoidRootPart
-                            RootWeld.C0 = ogC0
-                        end
-                        Camera.CameraType = CameraTypes[1]
-                        Camera.CameraSubject = lplr.Character or nil
-                    end
-                end)
-            else
-                RunLoops:UnbindFromHeartbeat("Autowin")
-            end
-        end
-    })
-end)
-
 
 runcode(function()
     local Section = Utility:CreateSection("AutoHeal", false)
