@@ -119,6 +119,7 @@ function RunLoops:UnbindFromHeartbeat(name)
     UnbindFromLoop(self.HeartTable, name)
 end
 
+local Combat = Window:CreateTab("Combat", "17155691785")
 local Blatant = Window:CreateTab("Blatant", "17155691785")
 local Render = Window:CreateTab("Render", "17155691785")
 local Utility = Window:CreateTab("Utility", "17155691785")
@@ -138,7 +139,6 @@ local bedwars = setmetatable({
     inventoryFolder = nil,
     connection = nil
 }, newData.BedWarsMeta)
-
 
 bedwars.connection = RunService.Heartbeat:Connect(function()
     if PlayerUtility.IsAlive(lplr) and lplr.Character:FindFirstChild("InventoryFolder") then
@@ -225,28 +225,19 @@ end
 
 local function SpeedMultiplier(flight)
     local baseMultiplier = 0
-    local multiplier = 0
-    local funny = false
     local characterAttributes = lplr.Character:GetAttributes()
 
-    if characterAttributes.StatusEffect_speed then
-        multiplier = multiplier + 5
-        funny = true
-    end
+    --if characterAttributes.StatusEffect_speed then
+        --baseMultiplier = baseMultiplier + 3
+    --end
 
     if characterAttributes.SpeedBoost then
         local speedBoostMultiplier = characterAttributes.SpeedBoost
-        multiplier = multiplier + (speedBoostMultiplier * 10)
-        funny = true
+        baseMultiplier = baseMultiplier + (speedBoostMultiplier * 9)
     end
 
     if characterAttributes.GrimReaperChannel then
-        multiplier = multiplier + 1.86 
-        funny = true
-    end
-
-    if funny then
-        baseMultiplier = baseMultiplier + (multiplier - 1) * 0.98
+        baseMultiplier = baseMultiplier + 1.86
     end
 
     return baseMultiplier
@@ -689,7 +680,7 @@ runcode(function()
 
                     UpdateSecondLeft(remainingTime)
 
-                    local flyVelocity = moveDirection * (FlightSpeedSlider.Value - 2)
+                    local flyVelocity = moveDirection * (FlightSpeedSlider.Value + SpeedMultiplier()) - Vector3.new(0, 2, 0)
                     i = i + deltaTime
                     local bounceVelocity = math.sin(i * math.pi) * 0.1
 
@@ -777,12 +768,12 @@ runcode(function()
         end
     })
     newData.toggles.ProgressBar = Blatant:CreateToggle({
-        Name = "ProgressBar",
+        Name = "Progress Bar",
         CurrentValue = true,
         Flag = "ProgressBar",
         SectionParent = Section,
-        Callback = function(Value)
-            ProgressBar.Enabled = Value
+        Callback = function(callback)
+            ProgressBar.Enabled = callback
         end
     })
     newData.toggles.tpdown = Blatant:CreateToggle({
@@ -790,8 +781,8 @@ runcode(function()
         CurrentValue = true,
         Flag = "tpdown",
         SectionParent = Section,
-        Callback = function(Value)
-            tpdown.Enabled = Value
+        Callback = function(callback)
+            tpdown.Enabled = callback
         end
     })
     newData.toggles.FlightKeybind = Blatant:CreateKeybind({
@@ -2511,4 +2502,4 @@ end
 
 --WhitelistModule.UpdateTags()
 GuiLibrary:LoadConfiguration()
-print("Loaded but zeph got no braincell :scream:")
+print("Loaded 6872274481")
