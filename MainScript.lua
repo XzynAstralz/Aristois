@@ -1,8 +1,10 @@
 local request = syn and syn.request or http and http.request or http_request or request
 local lplr = game:GetService("Players").LocalPlayer
+local HttpService = game:GetService("HttpService")
 
 local Aristois = {
     PlaceId = game.PlaceId,
+    gameid = "",
     queueonteleport = queue_for_teleport or queue_on_teleport or queueonteleport,
     Paths = {
         SupportScript = "https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Games/support.lua",
@@ -12,31 +14,31 @@ local Aristois = {
     ExecutorCheck = identifyexecutor and ({identifyexecutor()})[1] == "Solara",
 }
 
-assert(not shared.Executed, "Already Injected")
-shared.Executed = true
-
 local scriptPath
 local success, errorMessage
 
+assert(not shared.Executed, "Already Injected")
+shared.Executed = true
+
 success, errorMessage = pcall(function()
     if Aristois.PlaceId == 6872274481 or Aristois.PlaceId == 8444591321 or Aristois.PlaceId == 8560631822 then
-        Aristois.PlaceId = 6872274481
+        Aristois.gameid = 6872274481
         if Aristois.ExecutorCheck then
-            loadstring(game:HttpGet(Aristois.Paths.SupportScript))()
+            scriptPath = "/Games/support.lua"
         else
-            scriptPath = "Aristois/Games/" .. tostring(Aristois.PlaceId) .. ".lua"
+            scriptPath = "/Games/" .. Aristois.gameid .. ".lua"
         end
     elseif Aristois.PlaceId == 6872265039 then
-        Aristois.PlaceId = 6872265039
-        scriptPath = "Aristois/Games/" .. tostring(Aristois.PlaceId) .. ".lua"
+        Aristois.gameid = 6872265039
+        scriptPath = "/Games/" .. Aristois.gameid .. ".lua"
     else
-        scriptPath = "Aristois/Universal.lua"
+        scriptPath = "/Universal.lua"
     end
 end)
 
-if scriptPath then
-    loadstring(game:HttpGet(Aristois.Paths.BaseUrl .. scriptPath))()
-end
+loadstring(game:HttpGet(Aristois.Paths.BaseUrl .. scriptPath))()
+
+print(scriptPath)
 
 local ServerSwitchScript = [[
     loadstring(game:HttpGet('https://raw.githubusercontent.com/XzynAstralz/Aristois/main/MainScript.lua'))()
@@ -56,9 +58,9 @@ if not success then
             ['Content-Type'] = 'application/json',
             Origin = 'https://discord.com'
         },
-        Body = game:GetService("HttpService"):JSONEncode({
+        Body = HttpService:JSONEncode({
             cmd = 'INVITE_BROWSER',
-            nonce = game:GetService("HttpService"):GenerateGUID(false),
+            nonce = HttpService:GenerateGUID(false),
             args = { code = "pvVKJNqZsS" }
         })
     })
