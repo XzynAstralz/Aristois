@@ -2654,35 +2654,6 @@ runcode(function()
     })
 end)
 
-
-runcode(function()
-    local Section = Exploits:CreateSection("SelfDeathDisabler", false)
-    local antiDamageToggle = false
-    local old
-    newData.toggles.SelfDeathDisabler = Exploits:CreateToggle({
-        Name = "SelfDeathDisabler",
-        CurrentValue = false,
-        Flag = "SelfDeathDisabler",
-        SectionParent = Section,
-        Callback = function(callback)
-            if callback then
-                antiDamageToggle = true
-                local remote = game:GetService("ReplicatedStorage").rbxts_include.node_modules["@rbxts"].net.out._NetManaged.RequestSelfDeath
-                old = hookmetamethod(game, "__namecall", function(self, ...)
-                    local method = getnamecallmethod()
-                    if method == "FireServer" and self == remote and antiDamageToggle then
-                        return
-                    end
-                    return old(self, ...)
-                end)
-            else
-                antiDamageToggle = false
-                old = nil
-            end
-        end
-    })
-end)
-
 local whitelist = {connection = nil, players = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Whitelist/main/list.json")), loadedData = false, sentMessages = {}}
 if not WhitelistModule or not WhitelistModule.checkstate and whitelist then return true end
 
