@@ -397,16 +397,17 @@ runcode(function()
 
     local boxHandleAdornment = newData.createBoxAdornment()
     local activeAdornments = {}
-    local function updateBoxAdornments(root)    
+
+    local function updateBoxAdornments(root)
         if BoxesEnabled.Enabled then
             local existingAdornment = root:FindFirstChild("BoxHandleAdornment")
             local boxHandleAdornment = activeAdornments[root]
-
+    
             if not boxHandleAdornment then
                 boxHandleAdornment = newData.createBoxAdornment()
                 activeAdornments[root] = boxHandleAdornment
             end
-
+    
             if not existingAdornment then
                 boxHandleAdornment.Adornee = root
                 if boxHandleAdornment.Adornee then
@@ -418,17 +419,15 @@ runcode(function()
             end
         end
     end
-
-    local function clearAdornments()
-        if BoxesEnabled.Enabled then
-            for _, boxHandleAdornment in pairs(activeAdornments) do
-                boxHandleAdornment.Adornee = nil
-                boxHandleAdornment.Parent = nil
-            end
-            activeAdornments = {}
+    
+    local function clearAdornmentForRoot(root)
+        if activeAdornments[root] then
+            activeAdornments[root].Adornee = nil
+            activeAdornments[root].Parent = nil
+            activeAdornments[root] = nil
         end
     end
-
+    
     local oldViewmodelAnimation = bedwars.ViewmodelController.playAnimation
     local origC0 = ReplicatedStorage.Assets.Viewmodel.RightHand.RightWrist.C0
     bedwars.ViewmodelController.playAnimation = function(Self, id, ...)
@@ -437,7 +436,7 @@ runcode(function()
         end
         return oldViewmodelAnimation(Self, id, ...)
     end
-
+    
     newData.toggles.Killaura = Blatant:CreateToggle({
         Name = "Killaura",
         CurrentValue = false,
@@ -451,12 +450,30 @@ runcode(function()
                     if not sword then return end
                     if not PlayerUtility.IsAlive(lplr) then return end
     
+                    local previousEntities = nearestEntities
                     nearestEntities = PlayerUtility.getNearestEntities(Distance["Value"], false, true, 5)
+    
+                    for _, entityData in ipairs(previousEntities) do
+                        local entity = entityData.entity
+                        local root = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
+                        if root and not table.find(nearestEntities, entityData) then
+                            clearAdornmentForRoot(root)
+                        end
+                    end
+    
+                    for _, entityData in ipairs(nearestEntities) do
+                        local entity = entityData.entity
+                        local root = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
+                        if root then
+                            updateBoxAdornments(root)
+                        end
+                    end
+   
                     if #nearestEntities <= 0 then
-                        clearAdornments()
                         newData.Attacking = false
                         return
                     end
+
                     local nearestEntityData = nearestEntities[1]
                     local entity = nearestEntityData.entity
                     local root = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
@@ -468,6 +485,7 @@ runcode(function()
                             local selfPos = lplr.Character.HumanoidRootPart.Position + ((distanceToEntity > 14.3 or newData.toggles.Reach.CurrentValue and distanceToEntity > 21) and (CFrame.lookAt(lplr.Character.HumanoidRootPart.Position, root.Position).LookVector * 4) or Vector3.new(0, 0, 0))
                             switchItem(sword.tool)
                             bedwars.SwordController.lastAttack = game:GetService("Workspace"):GetServerTimeNow() - 0.11
+                            
                             bedwars.SwordHit:FireServer({
                                 weapon = sword.tool,
                                 entityInstance = entity,
@@ -478,6 +496,7 @@ runcode(function()
                                 },
                                 chargedAttack = {chargeRatio = 0}
                             })
+    
                             if SwingEnabled.Enabled and tick() - killauradelay >= (swordmeta.sword.respectAttackSpeedForEffects and swordmeta.sword.attackSpeed or 0.24) then
                                 bedwars.SwordController:playSwordEffect(sword, false)
                                 killauradelay = tick()
@@ -503,31 +522,32 @@ runcode(function()
                                 VMAnimActive = false
                                 lastEndAnim = tick()
                             end
-                            updateBoxAdornments(root)
                             lastEndAnim = tick()
                         else
-                            clearAdornments()
+                            clearAdornmentForRoot(root)
                             newData.Attacking = false
                         end
                     else
-                        clearAdornments()
+                        clearAdornmentForRoot(root)
                         newData.Attacking = false
                     end
                 end)
             else
                 RunLoops:UnbindFromHeartbeat("Killaura")
-                clearAdornments()
+                for root in pairs(activeAdornments) do
+                    clearAdornmentForRoot(root)
+                end
                 bedwars.ViewmodelController.playAnimation = oldViewmodelAnimation
                 oldViewmodelAnimation = nil
             end
         end
-    })
+    })      
     newData.toggles.KillauraDistance = Blatant:CreateSlider({
         Name = "Distance",
         Range = {1, 21},
         Increment = 1,
         Suffix = "blocks",
-        CurrentValue = 26,
+        CurrentValue = 21,
         Flag = "KillAuraDistanceSlider",
         SectionParent = Section,
         Callback = function(Value)
