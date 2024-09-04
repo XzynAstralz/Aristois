@@ -33,44 +33,27 @@ function Utility.getNearestEntities(maxDist, findNearestHealthEntity, teamCheck)
     local lplrCharacter = lplr.Character
     local lplrHumanoidRootPart = getCharacterRootPart(lplrCharacter)
     local lplrTeam = lplrCharacter:GetAttribute("Team")
-
     local entities = {}
 
-    local function addEntityData(entity, mag, health)
-        table.insert(entities, {entity = entity, distance = mag, health = health})
-    end
+    for _, tag in ipairs({"entity", "GolemBoss"}) do
+        for _, entity in ipairs(CollectionService:GetTagged(tag)) do
+            if entity ~= lplrCharacter and Utility.IsAlive(entity) then
+                local humanoidRootPart = getCharacterRootPart(entity)
+                if humanoidRootPart and entity.Name ~= "BarrelEntity" and entity.Name ~= lplr.Name then
+                    local mag = (humanoidRootPart.Position - lplrHumanoidRootPart.Position).Magnitude
+                    local health = getHealth(entity) or 1
 
-    local function processEntity(entity)
-        if Utility.IsAlive(entity) then
-            local humanoidRootPart = getCharacterRootPart(entity)
-            if humanoidRootPart and entity.Name ~= "BarrelEntity" and entity.Name ~= lplr.Name then
-                local mag = (humanoidRootPart.Position - lplrHumanoidRootPart.Position).Magnitude
-                local health = getHealth(entity) or 1
-
-                if mag <= maxDist and (not teamCheck or entity:GetAttribute("Team") ~= lplrTeam) then
-                    addEntityData(entity, mag, health)
+                    if mag <= maxDist and (not teamCheck or entity:GetAttribute("Team") ~= lplrTeam) then
+                        table.insert(entities, {entity = entity, distance = mag, health = health})
+                    end
                 end
             end
         end
     end
 
-    for _, entity in ipairs(CollectionService:GetTagged("entity")) do
-        if entity ~= lplr.Character then
-            processEntity(entity)
-        end
-    end
-
-    for _, entity in ipairs(CollectionService:GetTagged("GolemBoss")) do
-        processEntity(entity)
-    end
-
     if #entities > 0 then
         table.sort(entities, function(a, b)
-            if findNearestHealthEntity then
-                return a.health < b.health
-            else
-                return a.distance < b.distance
-            end
+            return findNearestHealthEntity and a.health < b.health or a.distance < b.distance
         end)
     end
 
