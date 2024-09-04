@@ -15,16 +15,16 @@ local TextChatService = game:GetService("TextChatService")
 local getcustomasset = getsynasset or getcustomasset
 local HttpService = game:GetService("HttpService")
 local VirtualUserService = game:GetService("VirtualUser")
-local GuiLibrary = loadstring(readfile("Aristois/GuiLibrary.lua"))()
-local PlayerUtility = loadstring(readfile("Aristois/Librarys/Utility.lua"))()
-local WhitelistModule = loadstring(readfile("Aristois/Librarys/Whitelist.lua"))()
+local GuiLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/GuiLibrary.lua"))()
+local PlayerUtility = loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Librarys/Utility.lua"))()
+local WhitelistModule = loadstring(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Aristois/main/Librarys/Whitelist.lua"))()
+
 local weaponMeta = HttpService:JSONDecode(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/test/main/sword.json"))
 local defaultChatSystemChatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
 local Whitelist = HttpService:JSONDecode(game:HttpGet("https://raw.githubusercontent.com/XzynAstralz/Whitelist/main/list.json"))
 local request = syn and syn.request or http and http.request or http_request or fluxus and fluxus.request or request or function() end
 shared.WhitelistFile = WhitelistModule
 local staffound = false
-
 local newData = {
     whitelist = {
         ChatStrings = {
