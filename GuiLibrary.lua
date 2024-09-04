@@ -507,6 +507,7 @@ local function ClosePrompt()
 	wait(.5)
 	Prompt.Visible = false
 end
+
 function RayfieldLibrary:Notify(NotificationSettings)
 	spawn(function()
 		local ActionCompleted = true
@@ -515,16 +516,16 @@ function RayfieldLibrary:Notify(NotificationSettings)
 		Notification.Name = NotificationSettings.Title or "Unknown Title"
 		Notification.Visible = true
 
-		local blurlight = nil
-		if not false then
-			blurlight = Instance.new("DepthOfFieldEffect",game:GetService("Lighting"))
+		local blurlight = nil 
+		--[[if not false then
+			blurlight = Instance.new("DepthOfFieldEffect", game:GetService("Lighting"))  -- man fuck you frappe i hate you
 			blurlight.Enabled = true
 			blurlight.FarIntensity = 0
 			blurlight.FocusDistance = 51.6
 			blurlight.InFocusRadius = 50
 			blurlight.NearIntensity = 1
-			game:GetService("Debris"):AddItem(script,0)
-		end
+			game:GetService("Debris"):AddItem(blurlight, 0)
+		end--]]
 
 		Notification.Actions.Template.Visible = false
 
@@ -547,12 +548,13 @@ function RayfieldLibrary:Notify(NotificationSettings)
 				NewAction.MouseButton1Click:Connect(function()
 					local Success, Response = pcall(Action.Callback)
 					if not Success then
-						print("Rayfield | Action: "..Action.Name.." Callback Error " ..tostring(Response))
+						print("Rayfield | Action: " .. Action.Name .. " Callback Error " .. tostring(Response))
 					end
 					ActionCompleted = true
 				end)
 			end
 		end
+
 		Notification.BackgroundColor3 = SelectedTheme.Background
 		Notification.Title.Text = NotificationSettings.Title or "Unknown"
 		Notification.Title.TextTransparency = 1
@@ -561,21 +563,21 @@ function RayfieldLibrary:Notify(NotificationSettings)
 		Notification.Description.TextTransparency = 1
 		Notification.Description.TextColor3 = SelectedTheme.TextColor
 		Notification.Icon.ImageColor3 = SelectedTheme.TextColor
+
 		if NotificationSettings.Image then
-			Notification.Icon.Image = "rbxassetid://"..tostring(NotificationSettings.Image) 
+			Notification.Icon.Image = "rbxassetid://" .. tostring(NotificationSettings.Image)
 		else
 			Notification.Icon.Image = "rbxassetid://3944680095"
 		end
 
 		Notification.Icon.ImageTransparency = 1
 
-		Notification.Parent = Notifications
 		Notification.Size = UDim2.new(0, 260, 0, 80)
 		Notification.BackgroundTransparency = 1
 
 		TweenService:Create(Notification, TweenInfo.new(0.7, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 295, 0, 91)}):Play()
 		TweenService:Create(Notification, TweenInfo.new(0.7, Enum.EasingStyle.Quint), {BackgroundTransparency = 0.1}):Play()
-		Notification:TweenPosition(UDim2.new(0.5,0,0.915,0),'Out','Quint',0.8,true)
+		Notification:TweenPosition(UDim2.new(0.5, 0, 0.915, 0), 'Out', 'Quint', 0.8, true)
 
 		wait(0.3)
 		TweenService:Create(Notification.Icon, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {ImageTransparency = 0}):Play()
@@ -588,15 +590,15 @@ function RayfieldLibrary:Notify(NotificationSettings)
 		else
 			if not false then
 				TweenService:Create(Notification, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {BackgroundTransparency = 0.4}):Play()
-			else 
+			else
 				TweenService:Create(Notification, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {BackgroundTransparency = 0}):Play()
 			end
 		end
 
 		if Rayfield.Name == "Rayfield" then
 			neon:BindFrame(Notification.BlurModule, {
-				Transparency = 0.98;
-				BrickColor = BrickColor.new("Institutional white");
+				Transparency = 0.98,
+				BrickColor = BrickColor.new("Institutional white"),
 			})
 		end
 
@@ -607,7 +609,7 @@ function RayfieldLibrary:Notify(NotificationSettings)
 			TweenService:Create(Notification, TweenInfo.new(0.7, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 295, 0, 132)}):Play()
 			wait(0.3)
 			for _, Action in ipairs(Notification.Actions:GetChildren()) do
-				if Action.ClassName == "TextButton" and Action.Name ~= "Template" then
+				if Action:IsA("TextButton") and Action.Name ~= "Template" then
 					TweenService:Create(Action, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {BackgroundTransparency = 0.2}):Play()
 					TweenService:Create(Action, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 0}):Play()
 					wait(0.05)
@@ -618,14 +620,14 @@ function RayfieldLibrary:Notify(NotificationSettings)
 		repeat wait(0.001) until ActionCompleted
 
 		for _, Action in ipairs(Notification.Actions:GetChildren()) do
-			if Action.ClassName == "TextButton" and Action.Name ~= "Template" then
+			if Action:IsA("TextButton") and Action.Name ~= "Template" then
 				TweenService:Create(Action, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {BackgroundTransparency = 1}):Play()
 				TweenService:Create(Action, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 1}):Play()
 			end
 		end
 
-		TweenService:Create(Notification.Title, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {Position = UDim2.new(0.47, 0,0.234, 0)}):Play()
-		TweenService:Create(Notification.Description, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {Position = UDim2.new(0.528, 0,0.637, 0)}):Play()
+		TweenService:Create(Notification.Title, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {Position = UDim2.new(0.47, 0, 0.234, 0)}):Play()
+		TweenService:Create(Notification.Description, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {Position = UDim2.new(0.528, 0, 0.637, 0)}):Play()
 		TweenService:Create(Notification, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 280, 0, 83)}):Play()
 		TweenService:Create(Notification.Icon, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {ImageTransparency = 1}):Play()
 		TweenService:Create(Notification, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {BackgroundTransparency = 0.6}):Play()
@@ -641,12 +643,13 @@ function RayfieldLibrary:Notify(NotificationSettings)
 		wait(0.2)
 		if not false then
 			neon:UnbindFrame(Notification.BlurModule)
-			blurlight:Destroy()
+			if blurlight then blurlight:Destroy() end
 		end
 		wait(0.9)
 		Notification:Destroy()
 	end)
 end
+
 
 local function CloseSideBar()
 	Debounce = true
