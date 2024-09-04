@@ -244,7 +244,7 @@ local function SpeedMultiplier(flight)
 end
 
 local nearestEntities = {}
-local Distance = {["Value"] = 22}
+local Distance = {["Value"] = 26}
 runcode(function()
     local Section = Blatant:CreateSection("Killaura", false)
     local FacePlayerEnabled = {Enabled = false}
@@ -255,9 +255,9 @@ runcode(function()
     local lastEndAnim = tick()
     local Animations = {
         Normal = {
-            {CFrame = CFrame.new(-0.17, 0.14, -0.12) * CFrame.Angles(math.rad(-53), math.rad(50), math.rad(-64)), Time = 0.1},
+            {CFrame = CFrame.new(-0.17, 0.14, -0.12) * CFrame.Angles(math.rad(-53), math.rad(50), math.rad(-64)), Time = 0.1}, 
             {CFrame = CFrame.new(-0.55, -0.59, -0.1) * CFrame.Angles(math.rad(-161), math.rad(54), math.rad(-6)), Time = 0.08},
-            {CFrame = CFrame.new(-0.62, -0.68, -0.07) * CFrame.Angles(math.rad(-167), math.rad(47), math.rad(-1)), Time = 0.03},
+            {CFrame = CFrame.new(-0.62, -0.68, -0.07) * CFrame.Angles(math.rad(-167), math.rad(47), math.rad(-1)), Time = 0.03}, 
             {CFrame = CFrame.new(-0.56, -0.86, 0.23) * CFrame.Angles(math.rad(-167), math.rad(49), math.rad(-1)), Time = 0.03}
         },
         Better = {
@@ -285,16 +285,17 @@ runcode(function()
 
     local boxHandleAdornment = newData.createBoxAdornment()
     local activeAdornments = {}
+
     local function updateBoxAdornments(root)
         if BoxesEnabled.Enabled then
             local existingAdornment = root:FindFirstChild("BoxHandleAdornment")
             local boxHandleAdornment = activeAdornments[root]
-
+    
             if not boxHandleAdornment then
                 boxHandleAdornment = newData.createBoxAdornment()
                 activeAdornments[root] = boxHandleAdornment
             end
-
+    
             if not existingAdornment then
                 boxHandleAdornment.Adornee = root
                 if boxHandleAdornment.Adornee then
@@ -306,14 +307,12 @@ runcode(function()
             end
         end
     end
-
-    local function clearAdornments()
-        if BoxesEnabled.Enabled then
-            for _, boxHandleAdornment in pairs(activeAdornments) do
-                boxHandleAdornment.Adornee = nil
-                boxHandleAdornment.Parent = nil
-            end
-            activeAdornments = {}
+    
+    local function clearAdornmentForRoot(root)
+        if activeAdornments[root] then
+            activeAdornments[root].Adornee = nil
+            activeAdornments[root].Parent = nil
+            activeAdornments[root] = nil
         end
     end
 
@@ -325,25 +324,45 @@ runcode(function()
         SectionParent = Section,
         Callback = function(callback)
             if callback then
+                local killauradelay = 0
                 RunLoops:BindToHeartbeat("Killaura", function()
                     local sword = getSword()
                     if not sword then return end
                     if not PlayerUtility.IsAlive(lplr) then return end
+    
+                    local previousEntities = nearestEntities
                     nearestEntities = PlayerUtility.getNearestEntities(Distance["Value"], false, true, 5)
+    
+                    for _, entityData in ipairs(previousEntities) do
+                        local entity = entityData.entity
+                        local root = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
+                        if root and not table.find(nearestEntities, entityData) then
+                            clearAdornmentForRoot(root)
+                        end
+                    end
+    
+                    for _, entityData in ipairs(nearestEntities) do
+                        local entity = entityData.entity
+                        local root = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
+                        if root then
+                            updateBoxAdornments(root)
+                        end
+                    end
+   
                     if #nearestEntities <= 0 then
-                        clearAdornments()
                         newData.Attacking = false
                         return
                     end
+
                     local nearestEntityData = nearestEntities[1]
                     local entity = nearestEntityData.entity
                     local root = entity:FindFirstChild("HumanoidRootPart") or entity.PrimaryPart
                     if root then
                         newData.Attacking = true
                         local distanceToEntity = (root.Position - lplr.Character.HumanoidRootPart.Position).magnitude
-                        if distanceToEntity <= Distance["Value"]  then
-                            local selfPos = lplr.Character.HumanoidRootPart.Position + ((distanceToEntity > 14.3) and (CFrame.lookAt(lplr.Character.HumanoidRootPart.Position, root.Position).LookVector * 4) or Vector3.new(0, 0, 0))
-                            switchItem(sword.Name, true)
+                        if distanceToEntity <= Distance["Value"] then
+                            local selfPos = lplr.Character.HumanoidRootPart.Position + ((distanceToEntity > 14.3 or newData.toggles.Reach.CurrentValue and distanceToEntity > 21) and (CFrame.lookAt(lplr.Character.HumanoidRootPart.Position, root.Position).LookVector * 4) or Vector3.new(0, 0, 0))
+                            switchItem(sword.Name, true)                       
                             bedwars.SwordHit:FireServer({
                                 weapon = sword,
                                 entityInstance = entity,
@@ -375,23 +394,26 @@ runcode(function()
                                 VMAnimActive = false
                                 lastEndAnim = tick()
                             end
-                            updateBoxAdornments(root)
                             lastEndAnim = tick()
                         else
-                            clearAdornments()
+                            clearAdornmentForRoot(root)
                             newData.Attacking = false
                         end
                     else
-                        clearAdornments()
+                        clearAdornmentForRoot(root)
                         newData.Attacking = false
                     end
                 end)
             else
                 RunLoops:UnbindFromHeartbeat("Killaura")
-                clearAdornments()
+                for root in pairs(activeAdornments) do
+                    clearAdornmentForRoot(root)
+                end
+                bedwars.ViewmodelController.playAnimation = oldViewmodelAnimation
+                oldViewmodelAnimation = nil
             end
         end
-    })
+    })      
     newData.toggles.KillauraDistance = Blatant:CreateSlider({
         Name = "Distance",
         Range = {1, 21},
