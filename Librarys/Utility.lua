@@ -65,20 +65,23 @@ function Utility.getNearestEntity(maxDist, findNearestHealthEntity, teamCheck)
     return nearestEntities and nearestEntities[1] and nearestEntities[1].entity or nil
 end
 
-function Utility.getNearestPlayerToMouse(teamCheck)
+function Utility.getNearestPlayerToMouse(teamCheck, maxDistance)
     local nearestPlayer, nearestDistance = nil, math.huge
     local mousePos = lplr:GetMouse()
 
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= lplr and (not teamCheck or player.Team ~= lplr.Team) then
             local character = player.Character
-            if character and character:FindFirstChild("HumanoidRootPart") then
-                local pos = character.HumanoidRootPart.Position
-                local screenPos, onScreen = Camera:WorldToViewportPoint(pos)
-                if onScreen then
-                    local distance = (Vector2.new(mousePos.X, mousePos.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                    if distance < nearestDistance then
-                        nearestPlayer, nearestDistance = player, distance
+            if character then
+                local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+                if humanoidRootPart then
+                    local pos = humanoidRootPart.Position
+                    local screenPos, onScreen = Camera:WorldToViewportPoint(pos)
+                    if onScreen then
+                        local distance = (Vector2.new(mousePos.X, mousePos.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                        if distance < nearestDistance and distance <= maxDistance then
+                            nearestPlayer, nearestDistance = player, distance
+                        end
                     end
                 end
             end
