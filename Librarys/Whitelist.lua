@@ -127,5 +127,6 @@ function ChatTagModule.AddExtraTag(player, tagText, tagColor)
         PlayerType = "PRIVATE"
     } 
 end
+ChatTagModule.UpdateTags()
 
 return ChatTagModule
