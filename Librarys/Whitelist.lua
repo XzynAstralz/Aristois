@@ -31,12 +31,21 @@ function ChatTagModule.getCustomTag(player)
     return nil, nil, nil
 end
 
-function ChatTagModule.Isattack(player)
-    local hashedCombined = hashUserIdAndUsername(player.UserId, player.Name)
-    if Whitelist[hashedCombined] then
-        return Whitelist[hashedCombined].attackable
+function ChatTagModule.Isattack(attacker, target)
+    local attackerHashed = hashUserIdAndUsername(attacker.UserId, attacker.Name)
+    local targetHashed = hashUserIdAndUsername(target.UserId, target.Name)
+    local attackerWhitelist = Whitelist[attackerHashed]
+    local targetWhitelist = Whitelist[targetHashed]
+
+    if attackerWhitelist then
+        if targetWhitelist then
+            return true
+        else
+            return false
+        end
+    else
+        return false
     end
-    return true
 end
 
 function rgbToHex(r, g, b)
